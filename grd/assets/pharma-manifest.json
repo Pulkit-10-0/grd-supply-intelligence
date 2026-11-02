@@ -1,0 +1,12 @@
+{
+  "source_url": "https://www.kaggle.com/datasets/milanzdravkovic/pharma-sales-data",
+  "sha256": "438291d9e582d758c4dcee5a8cb02910be5857876fbb747c69dab234bf970cbd",
+  "evidence_type": "observed_source_with_preprocessing",
+  "geography": "Original pharmacy; no Assam locations inferred",
+  "licence": "CC BY-NC 4.0 per original catalogue; recheck before commercial use",
+  "limitations": [
+    "Eight ATC category series, not individual product transactions",
+    "Publisher preprocessed outliers and missing values",
+    "Redistributed Assam demand is synthetic"
+  ]
+}

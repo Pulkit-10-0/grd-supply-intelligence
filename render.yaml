@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: grd-supply-demo
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    dockerCommand: python scripts/cloud_demo.py
+    healthCheckPath: /health/ready
+    autoDeployTrigger: "off"
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: GRD_TOKEN_SECRET
+        generateValue: true
+      - key: GRD_ADMIN_PASSWORD
+        sync: false
+      - key: GRD_DEMO_EMAIL
+        value: demo@grd.local
+      - key: GRD_SEED_CLOUD_DEMO
+        value: "false"
+      - key: CORS_ORIGINS
+        value: ""
+      - key: GRD_WORKER_POLL_SECONDS
+        value: "5"

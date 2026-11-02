@@ -1,0 +1,32 @@
+{
+  "cli": {
+    "version": ">= 16.0.0"
+  },
+  "build": {
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "GRD_ALLOW_LOCAL_HTTP": "0",
+        "EXPO_PUBLIC_GRD_API_URL": "https://grd-supply-demo.onrender.com"
+      }
+    },
+    "ios-simulator": {
+      "ios": {
+        "simulator": true
+      },
+      "distribution": "internal",
+      "env": {
+        "GRD_ALLOW_LOCAL_HTTP": "1"
+      }
+    },
+    "production": {
+      "autoIncrement": true,
+      "env": {
+        "GRD_ALLOW_LOCAL_HTTP": "0"
+      }
+    }
+  }
+}

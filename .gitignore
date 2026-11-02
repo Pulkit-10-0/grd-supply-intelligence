@@ -1,0 +1,32 @@
+data/
+outputs/
+*.csv
+*.pbix
+__pycache__/
+.venv/
+.env
+
+*.db
+*.db-shm
+*.db-wal
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.env.*
+!.env.example
+
+# Web build and local tooling
+web/node_modules/
+web/dist/
+web/*.tsbuildinfo
+web/test-results/
+web/playwright-report/
+
+# Public benchmark snapshot, attributed in the companion manifest.
+!grd/assets/*.csv
+
+# Local desktop metadata and distribution artifacts
+.DS_Store
+*.apk
+*.aab
+*.dump

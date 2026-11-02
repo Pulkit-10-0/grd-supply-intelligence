@@ -1,0 +1,2 @@
+# Keep the attributed benchmark snapshot byte-identical to its source fingerprint.
+grd/assets/pharma-salesdaily.csv -text whitespace=cr-at-eol
