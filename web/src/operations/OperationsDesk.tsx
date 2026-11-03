@@ -27,10 +27,8 @@ export function OperationsDesk(props: {
       <div className="page-heading">
         <div>
           <p className="eyebrow">FROM DECISION TO DELIVERY</p>
-          <h1>Every handoff, accounted for.</h1>
-          <p>
-            One desk for exceptions, replenishment, warehouse work and returns.
-          </p>
+          <h1>Operations desk</h1>
+          <p>Manage deliveries, supplier orders, counts and returns.</p>
         </div>
       </div>
       <div

@@ -1,3 +1,4 @@
+import { initialProduct } from "../../shared/workflow";
 import React, {
   createContext,
   useCallback,
@@ -161,9 +162,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         await saveWorkspace(vault, cache.current);
       }
       setSynced(new Date().toISOString());
-      setProduct((p) =>
-        next.products.some((x) => x.id === p) ? p : next.products[0]?.id || "",
-      );
+      setProduct((p) => initialProduct(next, p));
       if (outbox.current) setPending(await outbox.current.list());
       setError("");
     } catch (e) {
@@ -215,7 +214,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       setApiState(api);
       setOrigin(base);
       setData(next);
-      setProduct(next.products[0]?.id || "");
+      setProduct(initialProduct(next));
       setSynced(new Date().toISOString());
       setError("");
     },
@@ -244,7 +243,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
             setPending(await outbox.current.list());
             setApiState(api);
             setData(cached.data);
-            setProduct(cached.data.products[0]?.id || "");
+            setProduct(initialProduct(cached.data));
             setSynced(cached.savedAt);
             setNetwork(cached.network || null);
             setOffline(true);

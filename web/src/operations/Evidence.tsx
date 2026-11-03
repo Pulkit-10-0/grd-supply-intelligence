@@ -1,3 +1,4 @@
+import { Details } from "../WorkflowProgress";
 import { useEffect, useState } from "react";
 import { BookOpen, FlaskConical, RefreshCw, ShieldCheck } from "lucide-react";
 import { api, command } from "../api";
@@ -89,7 +90,7 @@ export function EvidenceWorkspace({
       <div className="page-heading">
         <div>
           <p className="eyebrow">KNOW WHAT SUPPORTS THE DECISION</p>
-          <h1>Show the working.</h1>
+          <h1>Stock & evidence</h1>
           <p>
             Follow a stock balance to its movements. Separate observed evidence
             from generated operations.
@@ -157,16 +158,14 @@ export function EvidenceWorkspace({
               ))}
             </select>
           </Field>
-          <Badge tone="demo">
-            {data.me.evidence_type} · {dateLabel(asOf)}
-          </Badge>
+          <Badge>{dateLabel(asOf)}</Badge>
         </div>
       )}
       {tab === "card" && (
         <section className="panel ops-main-panel">
           <SectionTitle
             eyebrow="PHYSICAL STOCK → AVAILABLE STOCK"
-            title="A balance you can explain"
+            title="Stock card"
           >
             Opening stock + incoming and positive adjustments − outgoing and
             negative adjustments = physical balance.
@@ -214,15 +213,17 @@ export function EvidenceWorkspace({
                   Ledger check<b>{card.reconciled ? "Balanced" : "Review"}</b>
                 </span>
               </div>
-              <p className="ops-note">
-                Oldest positive batch update:{" "}
-                {card.balance.updated_at
-                  ? new Date(card.balance.updated_at).toLocaleString("en-IN")
-                  : "Unknown"}
-                . Held and expired stock remain physical but are excluded from
-                usable stock. Projected stock additionally includes future
-                demand, expiry and declared arrivals.
-              </p>
+              <Details title="How this is calculated & recorded">
+                <p className="ops-note">
+                  Oldest positive batch update:{" "}
+                  {card.balance.updated_at
+                    ? new Date(card.balance.updated_at).toLocaleString("en-IN")
+                    : "Unknown"}
+                  . Held and expired stock remain physical but are excluded from
+                  usable stock. Projected stock additionally includes future
+                  demand, expiry and declared arrivals.
+                </p>
+              </Details>
               <div className="table-scroll">
                 <table className="data-table">
                   <thead>
@@ -315,11 +316,13 @@ export function EvidenceWorkspace({
                   ))}
                 </div>
               )}
-              <p className="ops-note">
-                {quality.assumptions} No availability evidence has been invented
-                for this demo. Sources:{" "}
-                {quality.sources.join(", ") || "none supplied"}.
-              </p>
+              <Details title="How this is calculated & recorded">
+                <p className="ops-note">
+                  {quality.assumptions} No availability evidence has been
+                  invented for this workspace. Sources:{" "}
+                  {quality.sources.join(", ") || "none supplied"}.
+                </p>
+              </Details>
             </>
           )}
           {hasRole(data, "steward", "manager") && (
@@ -385,11 +388,14 @@ export function EvidenceWorkspace({
                   onChange={(e) => setAvailability(e.target.value)}
                 />
               </Field>
-              <p className="ops-note">
-                Reported=false means missing evidence, not a stock-out. Existing
-                dates cannot be silently overwritten. Enter genuine exports or
-                clearly identify synthetic test inputs in the source.
-              </p>
+              <Details title="How this is calculated & recorded">
+                <p className="ops-note">
+                  Reported=false means missing evidence, not a stock-out.
+                  Existing dates cannot be silently overwritten. Enter genuine
+                  exports or clearly identify synthetic test inputs in the
+                  source.
+                </p>
+              </Details>
               <button className="button primary" disabled={busy}>
                 Record availability evidence
               </button>
@@ -517,11 +523,13 @@ export function EvidenceWorkspace({
                       <b>{dateLabel(String(result.test_first_target))}</b>
                     </span>
                   </div>
-                  <p className="ops-note">
-                    {String(result.selection)}. {String(result.interval_note)}.
-                    Only four test origins per horizon: useful evidence, not a
-                    guarantee of generalisation.
-                  </p>
+                  <Details title="How this is calculated & recorded">
+                    <p className="ops-note">
+                      {String(result.selection)}. {String(result.interval_note)}
+                      . Only four test origins per horizon: useful evidence, not
+                      a guarantee of generalisation.
+                    </p>
+                  </Details>
                   <div className="table-scroll">
                     <table className="data-table">
                       <thead>

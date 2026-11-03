@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -294,7 +294,7 @@ export function Page({
         </View>
         {session.offline && (
           <Badge
-            text="Offline snapshot · pending actions require server acceptance"
+            text="Offline · changes wait for confirmation"
             tone="warning"
           />
         )}
@@ -324,17 +324,14 @@ export function Page({
         )}
         {children}
         <Text style={s.small}>
-          {session.data?.me.evidence_type === "synthetic"
-            ? "SYNTHETIC DEMO · Fictional sites and stock"
-            : "Operational evidence · Check source provenance"}
-          {"\n"}Scenario {session.asOf} ·{" "}
+          Operating date {session.asOf} ·{" "}
           {session.synced
-            ? "Last fetched " +
+            ? "Updated " +
               new Date(session.synced).toLocaleTimeString([], {
                 hour: "2-digit",
                 minute: "2-digit",
               })
-            : "Not fetched"}
+            : "Not synced"}
         </Text>
       </ScrollView>
     </SafeAreaView>
@@ -350,6 +347,84 @@ export function Wait() {
     >
       <ActivityIndicator color={c.ink} />
       <Heading>GRD Supply Intelligence</Heading>
+    </View>
+  );
+}
+
+export function Disclosure({
+  title,
+  children,
+  initiallyOpen = false,
+}: {
+  title: string;
+  children: React.ReactNode;
+  initiallyOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(initiallyOpen);
+  return (
+    <View
+      style={{ borderTopWidth: 1, borderColor: c.line, paddingTop: 8, gap: 12 }}
+    >
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ expanded: open }}
+        onPress={() => setOpen(!open)}
+        style={[s.between, { minHeight: 44 }]}
+      >
+        <Text style={[s.text, { fontFamily: "DMSans_600SemiBold", flex: 1 }]}>
+          {title}
+        </Text>
+        <Text style={s.text}>{open ? "−" : "+"}</Text>
+      </Pressable>
+      {open && children}
+    </View>
+  );
+}
+export function WorkflowProgress({
+  steps,
+  stage,
+  partialStep,
+}: {
+  steps: string[];
+  stage: number;
+  partialStep?: number;
+}) {
+  return (
+    <View
+      accessibilityLabel={`Progress: ${stage < 0 ? "Cancelled" : steps[stage] || "In progress"}`}
+      style={{ flexDirection: "row", gap: 4, marginVertical: 8 }}
+    >
+      {steps.map((step, i) => (
+        <View
+          key={step}
+          style={{
+            flex: 1,
+            gap: 5,
+            borderBottomWidth: 3,
+            borderBottomColor:
+              i === partialStep ? c.amber : i <= stage ? c.ink : c.line,
+            paddingVertical: 8,
+          }}
+        >
+          <Text
+            style={[
+              s.small,
+              {
+                fontSize: 10,
+                color: i <= stage ? c.ink : c.dim,
+                fontFamily:
+                  i === stage ? "DMSans_600SemiBold" : "DMSans_400Regular",
+              },
+            ]}
+          >
+            {i !== partialStep && (i < stage || stage === steps.length - 1)
+              ? "✓"
+              : i + 1}{" "}
+            {step}
+            {i === partialStep ? " · partial" : ""}
+          </Text>
+        </View>
+      ))}
     </View>
   );
 }

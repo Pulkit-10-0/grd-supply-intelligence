@@ -1,3 +1,4 @@
+import { Details } from "../WorkflowProgress";
 import { useEffect, useState } from "react";
 import {
   ArrowRight,
@@ -69,7 +70,7 @@ export function RiskGrid({
                   <td key={day.date}>
                     <button
                       className={`risk-cell ${row.input_status === "stale" ? "stale" : day.status}`}
-                      aria-label={`${row.name}, ${day.date}: ${day.status}, ${day.balance ?? "unknown"} units`}
+                      aria-label={`${shortLocation(row.name)}, ${day.date}: ${day.status}, ${day.balance ?? "unknown"} units`}
                       title={`${dateLabel(day.date)} · ${number(day.balance)} left · ${number(day.unserved)} unserved`}
                       onClick={() => onCell(row.location_id)}
                     >
@@ -103,9 +104,7 @@ export function RiskGrid({
           <i className="unknown" />
           Unknown
         </span>
-        <span>
-          Central estimate · declared arrivals · synthetic where labelled
-        </span>
+        <span>Central estimate · planned arrivals</span>
       </div>
     </section>
   );
@@ -269,11 +268,8 @@ export function PlanningStudio({
       <div className="page-heading">
         <div>
           <p className="eyebrow">PLAN BEFORE YOU COMMIT</p>
-          <h1>A rehearsal for every decision.</h1>
-          <p>
-            Compare supply choices. Stress-test the network. Approve the plan
-            that holds up.
-          </p>
+          <h1>Planning studio</h1>
+          <p>Compare sources and delivery impact before approval.</p>
         </div>
         <Badge tone="demo">
           <Layers size={14} />
@@ -286,7 +282,7 @@ export function PlanningStudio({
         </div>
       )}
       <section className="panel studio-controls">
-        <SectionTitle title="Start with a real stock snapshot">
+        <SectionTitle title="Compare supply options">
           A comparison never posts stock movements. Approval rechecks and
           reserves every source atomically.
         </SectionTitle>
@@ -412,7 +408,7 @@ export function PlanningStudio({
         </aside>
         <section className="panel comparison-panel">
           {!selected && !shock ? (
-            <Empty title="See the consequences before you act">
+            <Empty title="Choose a comparison">
               No action, single-source and feasible split-source options will
               appear here, including every donor and residual service gap.
             </Empty>
@@ -499,21 +495,25 @@ export function PlanningStudio({
                         filtered={projectedRows.map((r) => r.location_id)}
                         scenario
                       />
-                      <p className="ops-note">
-                        Pins show projected end-of-horizon stock and any
-                        shortage in this frozen scenario. These are planning
-                        estimates, not current physical balances.
-                      </p>
+                      <Details title="How this is calculated & recorded">
+                        <p className="ops-note">
+                          Pins show projected end-of-horizon stock and any
+                          shortage in this frozen scenario. These are planning
+                          estimates, not current physical balances.
+                        </p>
+                      </Details>
                     </div>
                   )}
                   <ProjectionTable
                     projection={active.projection}
                     baseline={variants[0].projection}
                   />
-                  <p className="ops-note">
-                    {active.projection.note} Delays, reduced supply and demand
-                    shocks are hypothetical; missing evidence stays unknown.
-                  </p>
+                  <Details title="How this is calculated & recorded">
+                    <p className="ops-note">
+                      {active.projection.note} Delays, reduced supply and demand
+                      shocks are hypothetical; missing evidence stays unknown.
+                    </p>
+                  </Details>
                 </>
               )}
               {selected && canPlan && !shock && (
@@ -556,10 +556,7 @@ export function PlanningStudio({
       </div>
       {selected && canPlan && (
         <section className="panel disruption-builder">
-          <SectionTitle
-            eyebrow="WHAT IF?"
-            title="Give this plan a difficult day"
-          >
+          <SectionTitle eyebrow="WHAT IF?" title="Test a disruption">
             Create a separate scenario from exactly the same frozen base. The
             receiving location is the affected site.
           </SectionTitle>
@@ -672,13 +669,15 @@ export function TimelineEvidence({
             note: row.projection_method,
           }}
         />
-        <p className="ops-note">
-          {row.projection_method}. Source age:{" "}
-          {row.stock_age_hours === null
-            ? "unknown"
-            : `${number(row.stock_age_hours)} hours`}
-          . Operating date is fixed in this synthetic demo.
-        </p>
+        <Details title="How this is calculated & recorded">
+          <p className="ops-note">
+            {row.projection_method}. Source age:{" "}
+            {row.stock_age_hours === null
+              ? "unknown"
+              : `${number(row.stock_age_hours)} hours`}
+            .
+          </p>
+        </Details>
         <button className="button primary" onClick={onPlan}>
           Review supply options <ArrowRight size={16} />
         </button>

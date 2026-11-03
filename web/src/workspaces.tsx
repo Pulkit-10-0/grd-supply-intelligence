@@ -88,8 +88,8 @@ export function InventoryWorkspace({
       <div className="page-heading">
         <div>
           <p className="eyebrow">STOCK YOU CAN TRUST</p>
-          <h1>The right batch. A reliable balance.</h1>
-          <p>Every unit has a state, a location and a traceable history.</p>
+          <h1>Inventory & batches</h1>
+          <p>Track stock, reservations and expiry by batch.</p>
         </div>
         <Badge tone={data.reconciliation.ok ? "green" : "critical"}>
           <ShieldCheck size={13} />
@@ -437,7 +437,7 @@ export function ForecastWorkspace({
       <div className="page-heading">
         <div>
           <p className="eyebrow">CONFIDENCE THROUGH EVIDENCE</p>
-          <h1>Look ahead. Show your working.</h1>
+          <h1>Demand forecasts</h1>
           <p>
             Understand the demand signal and the trade-offs behind a stock
             policy.
@@ -495,11 +495,6 @@ export function ForecastWorkspace({
           </select>
         </label>
         <span className="filter-spacer" />
-        <Badge tone="demo">
-          {data.me.evidence_type === "synthetic"
-            ? "Synthetic demand"
-            : "Declared source data"}
-        </Badge>
       </div>
       <div className="tabs workspace-tabs">
         <button
@@ -796,9 +791,7 @@ export function ForecastWorkspace({
           <section className="panel">
             <SectionTitle
               title="Test a policy before acting"
-              action={
-                <Badge tone="demo">Synthetic single-lane experiment</Badge>
-              }
+              action={<Badge tone="demo">Policy simulation</Badge>}
             >
               Both policies face the same demand, delivery delays and starting
               stock.

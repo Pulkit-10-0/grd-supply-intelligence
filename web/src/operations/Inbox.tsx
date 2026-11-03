@@ -1,3 +1,4 @@
+import { Details } from "../WorkflowProgress";
 import { useEffect, useState } from "react";
 import { Bell, CheckCheck, Clock3, RefreshCw } from "lucide-react";
 import { api, command } from "../api";
@@ -173,11 +174,13 @@ export function Inbox({
             </button>
           ))}
       </div>
-      <p className="ops-note">
-        In-app alerts are available now. Android push is not configured.
-        Exception checks run on demand; Free hosting can sleep, so continuous
-        background escalation is not guaranteed.
-      </p>
+      <Details title="How this is calculated & recorded">
+        <p className="ops-note">
+          In-app alerts are available now. Android push is not configured.
+          Exception checks run on demand; Free hosting can sleep, so continuous
+          background escalation is not guaranteed.
+        </p>
+      </Details>
       {selected && (
         <Modal
           title={selected.payload.title}

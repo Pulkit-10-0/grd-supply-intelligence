@@ -220,7 +220,7 @@ export default function NetworkMap({
       const marker = L.marker([node.latitude, node.longitude], {
         icon,
         keyboard: true,
-        title: `${node.name}, ${row.status}, ${number(row.balance.available)} units`,
+        title: `${shortLocation(node.name)}, ${row.status}, ${number(row.balance.available)} units`,
         zIndexOffset: active ? 1000 : warehouse ? 100 : 300,
       }).addTo(pins.current);
       marker.on("click", () => onSelectRef.current(node.id));
@@ -252,7 +252,7 @@ export default function NetworkMap({
         ASSAM NETWORK
         <span className="map-label-separator" />
         {data.locations.length}{" "}
-        {data.me.evidence_type === "synthetic" ? "DEMO SITES" : "SITES"}
+        {data.me.evidence_type === "synthetic" ? "SITES" : "SITES"}
       </div>
       <div className="map-tools">
         <button
@@ -302,7 +302,7 @@ export default function NetworkMap({
       </div>
       <div className="map-footnote">
         <CircleHelp size={12} />
-        {failed ? "Offline map context · " : "Approximate demo sites · "}Supply
+        {failed ? "Offline map context · " : "Approximate locations · "}Supply
         links show configured connections
       </div>
       <div className="map-scale">

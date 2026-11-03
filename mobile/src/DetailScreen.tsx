@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Text, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import type { Option } from "../../shared/types";
+import { supplyFlow, supplySteps } from "../../shared/workflow";
 import {
   canLocation,
   dateLabel,
@@ -17,6 +18,8 @@ import { useSession } from "./session";
 import { quantity } from "./queue";
 import {
   Badge,
+  Disclosure,
+  WorkflowProgress,
   Button,
   Card,
   detail,
@@ -74,6 +77,17 @@ function DetailContent({ kind, id }: { kind: string; id: string }) {
   }
   const post = async (path: string, body: unknown, label: string) => {
     const saved = await session.post(path, body, label);
+    if (saved && kind === "plan") return;
+    if (saved && kind === "shipment") {
+      const shipment = data?.shipments.find((s) => s.id === id);
+      if (shipment) {
+        router.replace({
+          pathname: "/detail",
+          params: { kind: "plan", id: shipment.plan_id },
+        });
+        return;
+      }
+    }
     if (saved) router.back();
   };
   const lead = (
@@ -160,9 +174,8 @@ function DetailContent({ kind, id }: { kind: string; id: string }) {
           <Card>
             <Heading>Compare eligible sources</Heading>
             <Txt small>
-              Whole packs only ({item.pack_size} {item.base_unit}s). A proposal
-              checks route permission, arrival shelf life, donor protection and
-              available stock. It reserves nothing until approval.
+              Enter whole packs of {item.pack_size} {item.base_unit}s. Stock is
+              reserved after approval.
             </Txt>
             <Field
               label="Required units"
@@ -303,9 +316,7 @@ function DetailContent({ kind, id }: { kind: string; id: string }) {
           <Card>
             <Heading>Forecast this lane</Heading>
             <Txt small>
-              Runs the backend evaluation and model selection. A separate worker
-              processes the durable job. View completed evidence in More; pull
-              to refresh.
+              Run a demand forecast. Find the results under More → Forecasts.
             </Txt>
             <Button
               title="Run evaluated forecast"
@@ -359,18 +370,21 @@ function DetailContent({ kind, id }: { kind: string; id: string }) {
           <Empty text="Refresh and reopen this plan." />
         </Page>
       );
+    const flow = supplyFlow(data, p);
     const sourceAccess = canLocation(data, p.source_id),
       destAccess = canLocation(data, p.destination_id);
     const pack =
       data.products.find((x) => x.id === p.product_id)?.pack_size || 1;
     return (
-      <Page
-        title="One plan. Fully traced."
-        eyebrow="Supply execution / approval to receipt"
-      >
+      <Page title="Supply plan" eyebrow="Orders">
         {lead}
+        <WorkflowProgress
+          steps={supplySteps}
+          stage={flow.stage}
+          partialStep={flow.partialDispatch ? 2 : undefined}
+        />
         <Card>
-          <Badge text={title(p.status)} />
+          <Badge text={flow.label} />
           <Heading>{prod(p.product_id)}</Heading>
           <Txt>
             {loc(p.source_id)} → {loc(p.destination_id)}
@@ -379,39 +393,51 @@ function DetailContent({ kind, id }: { kind: string; id: string }) {
           <Txt>
             Arrival {dateLabel(p.arrival_date)} · Version {p.version}
           </Txt>
-          <Txt small>Plan {p.id}</Txt>
-        </Card>
-        <Card>
-          <Heading>Why this source?</Heading>
           <Txt>
-            {p.explanation.minimum_shelf_days}+ days minimum shelf life on
-            arrival
-          </Txt>
-          <Txt>
-            {number(p.explanation.source_available)} source available ·{" "}
-            {number(p.explanation.donor_protected)} donor-protected
-          </Txt>
-          <Txt>
-            {money(p.explanation.cost_paise)} illustrative transport cost
-          </Txt>
-          <Txt small>{p.explanation.policy_source}</Txt>
-          <Txt small>
-            Exact batch allocations:{" "}
-            {p.explanation.allocations
-              .map((a) => `${a.batch_id}: ${a.quantity}`)
-              .join(" · ")}
-          </Txt>
-          <Txt small>
-            Approval revalidates the recorded version and inputs. A stale
-            proposal must be reviewed again.
+            {number(flow.cancelled ? 0 : flow.unshipped)} to dispatch ·{" "}
+            {number(flow.outstanding)} in transit · {number(flow.received)}{" "}
+            received
           </Txt>
         </Card>
+        <Card style={{ backgroundColor: "#EDF3E6" }}>
+          <Heading>
+            {flow.stage === 4 ? "Delivery complete" : "Next step"}
+          </Heading>
+          <Txt>{flow.instruction}</Txt>
+        </Card>
+        <Disclosure title="Batch allocation & planning details">
+          <Card>
+            <Heading>Why this source?</Heading>
+            <Txt>
+              {p.explanation.minimum_shelf_days}+ days minimum shelf life on
+              arrival
+            </Txt>
+            <Txt>
+              {number(p.explanation.source_available)} source available ·{" "}
+              {number(p.explanation.donor_protected)} donor-protected
+            </Txt>
+            <Txt>
+              {money(p.explanation.cost_paise)} illustrative transport cost
+            </Txt>
+            <Txt small>{p.explanation.policy_source}</Txt>
+            <Txt small>
+              Exact batch allocations:{" "}
+              {p.explanation.allocations
+                .map((a) => `${a.batch_id}: ${a.quantity}`)
+                .join(" · ")}
+            </Txt>
+            <Txt small>
+              Approval revalidates the recorded version and inputs. A stale
+              proposal must be reviewed again.
+            </Txt>
+          </Card>
+        </Disclosure>
         {p.status === "proposed" &&
           canApprove &&
           sourceAccess &&
           destAccess && (
             <Button
-              title="Approve & reserve eligible batches"
+              title="Approve & reserve"
               disabled={busy}
               onPress={() => {
                 void safely(() =>
@@ -424,7 +450,7 @@ function DetailContent({ kind, id }: { kind: string; id: string }) {
               }}
             />
           )}
-        {["approved", "partial"].includes(p.status) &&
+        {["approved", "partial", "dispatched"].includes(p.status) &&
           canExecute &&
           sourceAccess &&
           remainingDispatch(data, p) > 0 && (
@@ -485,39 +511,43 @@ function DetailContent({ kind, id }: { kind: string; id: string }) {
         {canApprove &&
           sourceAccess &&
           destAccess &&
-          ["proposed", "approved", "partial"].includes(p.status) && (
-            <Card>
-              <Heading>Cancel unshipped allocation</Heading>
-              <Txt small>
-                Shipped stock remains tracked through receipt. Cancellation
-                releases only unshipped reservations.
-              </Txt>
-              <Field
-                label="Cancellation reason"
-                value={reason}
-                onChangeText={setReason}
-              />
-              <Button
-                title={
-                  confirm ? "Confirm cancellation" : "Review cancellation…"
-                }
-                secondary
-                disabled={busy || reason.trim().length < 3}
-                onPress={() => {
-                  if (!confirm) {
-                    setConfirm(true);
-                    return;
+          ["proposed", "approved", "partial", "dispatched"].includes(
+            p.status,
+          ) && (
+            <Disclosure title="Cancel unshipped stock">
+              <Card>
+                <Heading>Cancel unshipped allocation</Heading>
+                <Txt small>
+                  Shipped stock remains tracked through receipt. Cancellation
+                  releases only unshipped reservations.
+                </Txt>
+                <Field
+                  label="Cancellation reason"
+                  value={reason}
+                  onChangeText={setReason}
+                />
+                <Button
+                  title={
+                    confirm ? "Confirm cancellation" : "Review cancellation…"
                   }
-                  void safely(() =>
-                    post(
-                      `/plans/${p.id}/cancel`,
-                      { reason },
-                      `Cancel plan ${p.id.slice(0, 8)}`,
-                    ),
-                  );
-                }}
-              />
-            </Card>
+                  secondary
+                  disabled={busy || reason.trim().length < 3}
+                  onPress={() => {
+                    if (!confirm) {
+                      setConfirm(true);
+                      return;
+                    }
+                    void safely(() =>
+                      post(
+                        `/plans/${p.id}/cancel`,
+                        { reason },
+                        `Cancel plan ${p.id.slice(0, 8)}`,
+                      ),
+                    );
+                  }}
+                />
+              </Card>
+            </Disclosure>
           )}
       </Page>
     );
@@ -535,11 +565,12 @@ function DetailContent({ kind, id }: { kind: string; id: string }) {
     const canReceive =
       !!shipmentPlan && canExecute && canLocation(data, sh.destination_id);
     return (
-      <Page
-        title="Receive with confidence."
-        eyebrow="Delivery / accepted and quarantined stock"
-      >
+      <Page title="Record delivery" eyebrow="Receiving">
         {lead}
+        <WorkflowProgress
+          steps={supplySteps}
+          stage={sh.lines.some((l) => l.received < l.quantity) ? 3 : 4}
+        />
         <Card>
           <Text style={s.label}>Medicine being received</Text>
           <Heading>

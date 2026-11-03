@@ -1,3 +1,9 @@
+import {
+  supplierSteps,
+  returnSteps,
+  countSteps,
+  workflowStage,
+} from "../../shared/workflow";
 import React, { useState } from "react";
 import { ScrollView, Pressable, Text, View } from "react-native";
 import { router } from "expo-router";
@@ -18,7 +24,18 @@ import {
 } from "../../shared/utils";
 import { useSession } from "./session";
 import { quantity } from "./queue";
-import { Badge, Button, Card, Empty, Field, Heading, Page, s, Txt } from "./ui";
+import {
+  Badge,
+  Button,
+  Card,
+  Empty,
+  Field,
+  Heading,
+  Page,
+  s,
+  Txt,
+  WorkflowProgress,
+} from "./ui";
 
 export function OperationsScreen() {
   const session = useSession();
@@ -48,7 +65,16 @@ export function OperationsScreen() {
     body: Record<string, unknown>,
     label: string,
   ) {
-    if (await session.post(path, body, label)) setSelected(null);
+    if (await session.post(path, body, label)) {
+      if (selected && api)
+        setSelected(
+          await api.request<Workflow<unknown>>(
+            `/operations/record/${selected.id}`,
+          ),
+        );
+      setReason("");
+      setValues({});
+    }
   }
   const base = { version: selected?.version, as_of: asOf, reason };
   const field = (label: string, key: string, numeric = false) => (
@@ -68,10 +94,7 @@ export function OperationsScreen() {
     { id: "evidence", label: "Stock card" },
   ];
   return (
-    <Page
-      title="Every handoff, accounted for."
-      eyebrow="Operations desk / shared with the website"
-    >
+    <Page title="Operations desk" eyebrow="Worklists">
       <Button
         title="← Back to workspace"
         secondary
@@ -125,10 +148,6 @@ export function OperationsScreen() {
               )
             }
           />
-          <Txt small>
-            In-app inbox available. Android push credentials are not configured.
-            Free hosting can sleep.
-          </Txt>
         </>
       )}
       {tab !== "evidence" &&
@@ -176,7 +195,7 @@ export function OperationsScreen() {
             );
           })}
       {tab !== "evidence" && !selected && !all.some((w) => w.kind === tab) && (
-        <Empty text="No work items yet. Create a supplier order, assigned count or return on the website, then refresh. For alerts, check current exceptions." />
+        <Empty text="No work items. Pull to refresh or check the inbox." />
       )}
       {selected && (
         <>
@@ -186,6 +205,18 @@ export function OperationsScreen() {
             onPress={() => setSelected(null)}
           />
           <Card>
+            {selected.kind !== "exception" && (
+              <WorkflowProgress
+                steps={
+                  selected.kind === "supplier_order"
+                    ? supplierSteps
+                    : selected.kind === "return_transfer"
+                      ? returnSteps
+                      : countSteps
+                }
+                stage={workflowStage(selected.kind, selected.state)}
+              />
+            )}
             <Badge text={title(selected.state)} />
             <Heading>{title(selected.kind)}</Heading>
             <Txt small>

@@ -1,4 +1,5 @@
 import type { Data, Network } from "./types";
+import { supplyFlow } from "./workflow";
 import {
   dateLabel,
   number,
@@ -18,6 +19,11 @@ export interface Action {
   severity: string;
   label: string;
   metric: string;
+  progress?: number;
+  nextLabel?: string;
+  pendingReceipt?: boolean;
+  pendingDispatch?: boolean;
+  partialDispatch?: boolean;
 }
 export function buildActions(
   data: Data,
@@ -74,26 +80,39 @@ export function buildActions(
         metric: "Review stock",
       });
   }
-  for (const p of data.plans.filter((x) =>
-    ["proposed", "approved", "partial", "dispatched"].includes(x.status),
-  ))
+  for (const p of data.plans.filter(
+    (p) =>
+      ["proposed", "approved", "partial", "dispatched"].includes(p.status) ||
+      supplyFlow(data, p).outstanding > 0,
+  )) {
+    const flow = supplyFlow(data, p);
     items.push({
       id: p.id,
       kind: "plan",
       ref: p.id,
-      title:
-        p.status === "proposed"
-          ? "A supply plan is ready for review"
-          : p.status === "approved"
-            ? "Approved stock is ready to dispatch"
-            : "Shipment execution in progress",
-      description: `${number(p.quantity)} units · ${loc(p.source_id)} → ${loc(p.destination_id)}`,
+      title: `${loc(p.source_id)} → ${loc(p.destination_id)}`,
+      description: `${number(p.quantity)} units · ${flow.label}`,
       location: loc(p.destination_id),
       product: prod(p.product_id),
       severity: "neutral",
-      label: title(p.status),
-      metric: "View plan",
+      label: flow.label,
+      metric: flow.outstanding
+        ? `${number(flow.outstanding)} in transit`
+        : `${number(flow.unshipped)} to dispatch`,
+      progress: flow.stage,
+      pendingReceipt: flow.outstanding > 0,
+      pendingDispatch: flow.canDispatch,
+      partialDispatch: flow.partialDispatch,
+      nextLabel:
+        flow.next === "approve"
+          ? "Review plan"
+          : flow.next === "receive"
+            ? "Record receipt"
+            : flow.next === "dispatch"
+              ? "Prepare dispatch"
+              : "View plan",
     });
+  }
   for (const r of data.requests.filter(
     (x) =>
       x.quantity > x.fulfilled + x.cancelled &&

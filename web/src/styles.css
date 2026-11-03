@@ -5323,4 +5323,326 @@ strong {
     font-size: 10px;
   }
 }
-.scenario-map {padding:0 24px 12px}.scenario-map .network-map{min-height:330px;height:330px}.scenario-map .map-canvas{height:330px}.scenario-map .map-shell{height:330px;min-height:330px}.scenario-map .map-legend{font-size:9px}
+.scenario-map {
+  padding: 0 24px 12px;
+}
+.scenario-map .network-map {
+  min-height: 330px;
+  height: 330px;
+}
+.scenario-map .map-canvas {
+  height: 330px;
+}
+.scenario-map .map-shell {
+  height: 330px;
+  min-height: 330px;
+}
+.scenario-map .map-legend {
+  font-size: 9px;
+}
+
+/* Consistent operating journey: one current step and a clear next action. */
+.workflow-progress {
+  display: flex;
+  list-style: none;
+  margin: 0 0 22px;
+  padding: 0;
+  gap: 0;
+  width: 100%;
+  counter-reset: step;
+}
+.workflow-progress li {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted, #778277);
+  padding: 12px 8px;
+  border-bottom: 2px solid #e3e8df;
+}
+.workflow-progress .workflow-dot {
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: #eef0eb;
+  color: #737c70;
+  font-size: 11px;
+}
+.workflow-progress li.complete {
+  color: #42624b;
+  border-color: #a7c59b;
+}
+.workflow-progress li.complete .workflow-dot {
+  background: #e2edda;
+  color: #37583d;
+}
+.workflow-progress li.current {
+  color: #243c2e;
+  border-color: #355b40;
+  background: #f1f6ec;
+  border-radius: 8px 8px 0 0;
+}
+.workflow-progress li.current .workflow-dot {
+  background: #2d4935;
+  color: white;
+  box-shadow: 0 0 0 3px #dbe7d1;
+}
+.workflow-progress.compact {
+  margin: 10px 0;
+  gap: 3px;
+}
+.workflow-progress.compact li {
+  display: block;
+  font-size: 10px;
+  padding: 7px 0;
+  line-height: 1.5;
+  border-bottom-width: 3px;
+}
+.workflow-progress.compact .workflow-dot {
+  display: none;
+}
+.next-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #f0f5e9;
+  border: 1px solid #dce6cf;
+  border-radius: 14px;
+  padding: 15px 17px;
+  margin: 8px 0 18px;
+}
+.next-step-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: #e0ebd1;
+  color: #35533b;
+}
+.next-step strong {
+  font-size: 13px;
+  color: #2d4433;
+}
+.next-step p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #566553;
+}
+.next-step.is-complete {
+  background: #eaf4ed;
+  border-color: #cee3d3;
+}
+.fulfilment-totals {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border: 1px solid #e4e8df;
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 12px 0 20px;
+}
+.fulfilment-totals > div {
+  padding: 14px;
+  border-right: 1px solid #e4e8df;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.fulfilment-totals > div:last-child {
+  border: 0;
+}
+.fulfilment-totals small {
+  font-size: 11px;
+  color: #737d70;
+}
+.fulfilment-totals strong {
+  font-size: 20px;
+  letter-spacing: -0.5px;
+}
+.disclosure {
+  border-top: 1px solid #e4e8df;
+  margin-top: 12px;
+}
+.disclosure > summary {
+  cursor: pointer;
+  padding: 15px 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #53614f;
+  list-style-position: inside;
+  min-height: 44px;
+}
+.disclosure > summary:hover {
+  color: #223a2b;
+}
+.disclosure > summary:focus-visible {
+  outline: 2px solid #50733c;
+  outline-offset: 3px;
+}
+.disclosure-content {
+  padding: 0 0 16px;
+}
+.disclosure-content > .disclosure {
+  margin-left: 10px;
+}
+.disclosure-content p,
+.exception-actions p {
+  font-size: 12px;
+  line-height: 1.6;
+  color: #697563;
+}
+.exception-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+.exception-actions > p,
+.exception-actions > .full-label {
+  flex-basis: 100%;
+}
+.dispatch-field {
+  max-width: 380px;
+  margin-bottom: 20px;
+}
+.dispatch-field input {
+  max-width: 220px;
+}
+.dispatch-field small {
+  font-size: 12px;
+  font-weight: 400;
+  color: #6c7767;
+}
+.receipt-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 14px;
+  border-radius: 10px;
+  background: #f2f5ef;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.order-lanes {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 0 0 22px;
+}
+.order-lanes button {
+  min-height: 42px;
+  padding: 10px 17px;
+  border: 1px solid #e0e6d8;
+  border-radius: 10px;
+  background: white;
+  color: #68725f;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.order-lanes button.active {
+  background: #293f30;
+  color: white;
+  border-color: #293f30;
+}
+.order-lanes button:focus-visible {
+  outline: 2px solid #62834b;
+  outline-offset: 3px;
+}
+.action-card-bottom > strong {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+  font-size: 11px;
+  color: #3c5c3f;
+}
+.action-card h3 {
+  font-size: 16px;
+}
+.action-card p {
+  font-size: 12px;
+  line-height: 1.5;
+}
+.modal-footer {
+  position: sticky;
+  bottom: 0;
+  background: #fff;
+  z-index: 3;
+  border-top: 1px solid #e1e6db;
+  gap: 12px;
+}
+.modal-footer > .footer-buttons {
+  margin-left: auto;
+}
+@media (max-width: 700px) {
+  .workflow-progress li {
+    font-size: 10px;
+    gap: 5px;
+    padding: 10px 4px;
+    flex-direction: column;
+    text-align: center;
+  }
+  .workflow-progress .workflow-dot {
+    width: 22px;
+    height: 22px;
+  }
+  .workflow-progress.compact li {
+    font-size: 9px;
+  }
+  .fulfilment-totals {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .fulfilment-totals > div:nth-child(2) {
+    border-right: 0;
+  }
+  .fulfilment-totals > div:nth-child(-n + 2) {
+    border-bottom: 1px solid #e4e8df;
+  }
+  .modal-footer {
+    flex-wrap: wrap;
+  }
+  .modal-footer > .footer-buttons {
+    flex: 1;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+  .modal-footer .button {
+    font-size: 12px;
+    min-height: 44px;
+  }
+  .order-lanes {
+    gap: 6px;
+  }
+  .order-lanes button {
+    padding: 9px 13px;
+  }
+  .action-card-bottom {
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+}
+.workflow-progress li.partial {
+  color: #806337;
+  border-color: #d9bb7a;
+}
+.workflow-progress li.partial .workflow-dot {
+  background: #f8efd9;
+  color: #806337;
+}
+.workflow-progress small {
+  font-size: inherit;
+  font-weight: 400;
+}

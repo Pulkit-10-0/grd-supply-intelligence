@@ -51,13 +51,17 @@ export function useOperation(
       setBusy(false);
     }
   }
-  async function transition(
-    w: Pick<Workflow, "id" | "version">,
+  async function transition<T>(
+    w: Workflow<T>,
     path: string,
     body: Record<string, unknown>,
   ) {
-    await command(path, { version: w.version, ...body });
-    notify("Action recorded. Inventory and worklists refreshed.");
+    const updated = await command<Workflow<T>>(path, {
+      version: w.version,
+      ...body,
+    });
+    notify("Saved. Records updated.");
+    return updated;
   }
   return { busy, error, setError, run, transition };
 }

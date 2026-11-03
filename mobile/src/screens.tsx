@@ -1,3 +1,4 @@
+import { supplySteps } from "../../shared/workflow";
 import React, { useMemo, useState } from "react";
 import { Platform, Pressable, ScrollView, Text, View } from "react-native";
 import { router } from "expo-router";
@@ -26,6 +27,8 @@ import {
 import { useSession } from "./session";
 import {
   Badge,
+  Disclosure,
+  WorkflowProgress,
   Button,
   c,
   Card,
@@ -82,6 +85,13 @@ function ActionCard({ action }: { action: Action }) {
         </View>
         <Heading>{action.title}</Heading>
         <Txt>{action.description}</Txt>
+        {action.progress !== undefined && (
+          <WorkflowProgress
+            steps={supplySteps}
+            stage={action.progress}
+            partialStep={action.partialDispatch ? 2 : undefined}
+          />
+        )}
         <Text style={s.small}>
           {action.product} · {action.metric}
         </Text>
@@ -104,10 +114,7 @@ export function HomeScreen() {
     x.lines.some((l) => l.quantity > l.received),
   );
   return (
-    <Page
-      title="Every unit matters."
-      eyebrow="Supply intelligence / field workspace"
-    >
+    <Page title="Today" eyebrow="Supply intelligence / field workspace">
       <LinearGradient
         colors={["#244D3B", "#173B31"]}
         style={{ borderRadius: 26, padding: 23, gap: 20 }}
@@ -194,7 +201,7 @@ export function NetworkScreen() {
   const { data, network, asOf } = useSession();
   if (!data) return null;
   return (
-    <Page title="The network." eyebrow="Location intelligence / 21-day horizon">
+    <Page title="Network" eyebrow="Location intelligence / 21-day horizon">
       <ProductSelector />
       <NetworkMap large />
       <Heading>Operating locations</Heading>
@@ -258,27 +265,28 @@ export function ActionsScreen() {
   const shown = actions.filter(
     (a) =>
       filter === "All" ||
-      (filter === "Risks"
-        ? ["risk", "expiry", "data"].includes(a.kind)
-        : filter === "Plans"
-          ? ["plan", "request"].includes(a.kind)
-          : a.kind === "case"),
+      (filter === "Review"
+        ? a.kind === "request" || a.progress === 1
+        : filter === "Dispatch"
+          ? a.progress === 2 || a.pendingDispatch
+          : filter === "Receive"
+            ? a.progress === 3 || a.pendingReceipt
+            : filter === "Risks"
+              ? ["risk", "expiry", "data"].includes(a.kind)
+              : a.kind === "case"),
   );
   const inbound = data.shipments.filter((x) =>
     x.lines.some((l) => l.quantity > l.received),
   );
   return (
-    <Page
-      title="Make the next move."
-      eyebrow="Action centre / from risk to receipt"
-    >
+    <Page title="Action centre" eyebrow="Action centre / from risk to receipt">
       <ProductSelector />
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ gap: 8 }}
       >
-        {["All", "Risks", "Plans", "Cases"].map((f) => (
+        {["All", "Review", "Dispatch", "Receive", "Risks", "Cases"].map((f) => (
           <Pressable
             accessibilityRole="button"
             key={f}
@@ -347,7 +355,7 @@ export function StockScreen() {
         .includes(search.toLowerCase()),
   );
   return (
-    <Page title="Know your stock." eyebrow="Batch ledger / traceable by design">
+    <Page title="Inventory" eyebrow="Batch ledger / traceable by design">
       <Button
         title="Scan an internal batch label"
         onPress={() => router.push("/scan")}
@@ -434,35 +442,34 @@ export function MoreScreen() {
     }
   }
   return (
-    <Page
-      title="Proof behind the plan."
-      eyebrow="Evidence / assistant / account"
-    >
-      <Card>
-        <View style={s.row}>
-          <ShieldCheck size={23} color={c.ink} />
-          <Heading>Evidence matters</Heading>
-        </View>
-        <Txt>
-          {data.me.evidence_type === "synthetic"
-            ? "This demonstration uses generated demand, fictional Assam sites and illustrative route policies. Results show system behaviour; they do not measure GRD business impact."
-            : "Review dataset provenance and approved operating policies before acting."}
-        </Txt>
-        <Txt small>
-          Map: geoBoundaries / DataMeet / Election Commission of India, 2011 ·
-          CC BY 2.5 India. Paths are simplified for mobile. Route lines are
-          illustrative.
-        </Txt>
-      </Card>
+    <Page title="More" eyebrow="Evidence / assistant / account">
+      <Disclosure title="Data sources & map attribution">
+        <Card>
+          <View style={s.row}>
+            <ShieldCheck size={23} color={c.ink} />
+            <Heading>Data sources</Heading>
+          </View>
+          <Txt>
+            {data.me.evidence_type === "synthetic"
+              ? "Generated demand and fictional Assam locations support the operating scenario. Public-data forecast benchmarks are separate."
+              : "Review dataset provenance and approved operating policies before acting."}
+          </Txt>
+          <Txt small>
+            Map: geoBoundaries / DataMeet / Election Commission of India, 2011 ·
+            CC BY 2.5 India. Paths are simplified for mobile. Route lines are
+            illustrative.
+          </Txt>
+        </Card>
+      </Disclosure>
       <Button
-        title="Open operations desk · inbox, counts, suppliers & returns"
+        title="Operations desk"
         onPress={() => router.push("/operations")}
       />
       <Heading>Pending actions · {pending.length}</Heading>
       <Txt small>
         {Platform.OS === "web"
           ? "Browser preview: actions survive in this tab’s memory only. Use the native app for secure persistence."
-          : "Saved in this device’s secure storage. Pending actions have not been confirmed by the server. Retry keeps the original key and quantities."}
+          : "Waiting for server confirmation. Retry after reconnecting."}
       </Txt>
       {pending.map((p) => (
         <Card key={p.id}>
@@ -520,182 +527,187 @@ export function MoreScreen() {
           </View>
         </Card>
       )}
-      <ProductSelector />
-      <Heading>Forecasts & policy simulations</Heading>
-      {jobs.slice(0, 6).map((j) => {
-        const points = j.result.operational_forecast || j.result.forecast || [];
-        const max = Math.max(1, ...points.map((p) => p.upper || p.quantity));
-        const path = points
-          .map(
-            (p, i) =>
-              `${i ? "L" : "M"}${12 + (i * 260) / Math.max(1, points.length - 1)},${76 - (p.quantity / max) * 60}`,
-          )
-          .join(" ");
-        return (
-          <Card key={j.id}>
-            <View style={s.between}>
-              <Heading>{title(j.kind)}</Heading>
-              <Badge
-                text={title(j.status)}
-                tone={j.status === "failed" ? "critical" : "neutral"}
-              />
-            </View>
-            <Txt>
-              {shortLocation(
-                data.locations.find((l) => l.id === j.payload.location_id)
-                  ?.name || j.payload.location_id,
-              )}
-            </Txt>
-            {j.error && <Txt>{j.error}</Txt>}
-            {j.result.selected_model && (
-              <Txt small>
-                Selected model: {title(j.result.selected_model)} · Cutoff{" "}
-                {j.result.source_cutoff}
-              </Txt>
-            )}
-            {points.length > 0 && (
-              <>
-                <Svg width="100%" height="90" viewBox="0 0 290 90">
-                  <Path d={path} stroke={c.ink} strokeWidth="3" fill="none" />
-                </Svg>
-                <Txt small>
-                  {points
-                    .map(
-                      (p) =>
-                        `W${p.weeks_ahead}: ${number(p.quantity)} [${number(p.lower)}–${number(p.upper)}]`,
-                    )
-                    .join(" · ")}
-                </Txt>
-              </>
-            )}
-            {j.result.selection && <Txt small>{j.result.selection}</Txt>}
-            {j.result.service_change_percentage_points != null && (
-              <Txt>
-                Simulated service change:{" "}
-                {number(j.result.service_change_percentage_points, 2)}{" "}
-                percentage points. Synthetic scenario, not measured impact.
-              </Txt>
-            )}
-            <Go kind="job" id={j.id} />
-          </Card>
-        );
-      })}
-      {!jobs.length && (
-        <Empty text="No jobs for this medicine. Open a network location to run a forecast." />
-      )}
-      <Card>
-        <View style={s.row}>
-          <Sparkles size={21} color={c.ink} />
-          <Heading>Grounded assistant</Heading>
-        </View>
-        <Txt small>
-          Read-only retrieval from approved policy passages or a recorded plan.
-          Unsupported questions receive an explicit limitation.
-        </Txt>
-        <View style={s.row}>
-          {(["policy", "operations"] as const).map((m) => (
-            <Pressable
-              accessibilityRole="button"
-              key={m}
-              onPress={() => {
-                setMode(m);
-                setAnswer(null);
-              }}
-              style={s.chip}
-            >
-              <Text style={[s.small, { color: mode === m ? c.ink : c.dim }]}>
-                {mode === m ? "● " : ""}
-                {title(m)}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-        {mode === "operations" && (
-          <Field
-            label="Recorded plan ID"
-            value={reference}
-            onChangeText={setReference}
-          />
-        )}
-        <Field
-          label="Your question"
-          value={question}
-          onChangeText={setQuestion}
-          multiline
-          placeholder="Which transfer policy applies?"
-        />
-        <Button
-          title={asking ? "Checking sources…" : "Ask with sources"}
-          disabled={
-            asking ||
-            question.trim().length < 3 ||
-            (mode === "operations" && !reference.trim())
-          }
-          onPress={() => {
-            setAsking(true);
-            void safely(async () => {
-              const result = await api!.request<typeof answer>(
-                "/assistant",
-                "POST",
-                {
-                  mode,
-                  question,
-                  as_of: session.asOf,
-                  ...(reference ? { reference_id: reference.trim() } : {}),
-                },
-              );
-              setAnswer(result);
-            }).finally(() => setAsking(false));
-          }}
-        />
-        {answer && (
-          <>
-            <Txt>{answer.answer}</Txt>
-            {answer.citations?.map((citation, index) => (
-              <View key={index} style={{ gap: 5 }}>
-                <Text style={s.label}>
-                  {citation.title || title(citation.type || "Source")} · Version{" "}
-                  {citation.version || "—"}
-                </Text>
-                {citation.quote && <Txt>{citation.quote}</Txt>}
-                {citation.type === "plan" && citation.id && (
-                  <Button
-                    title="Open the recorded plan evidence"
-                    secondary
-                    onPress={() => detail("plan", citation.id!)}
-                  />
-                )}
+      <Disclosure title="Forecasts & policy simulations">
+        <ProductSelector />
+        {jobs.slice(0, 6).map((j) => {
+          const points =
+            j.result.operational_forecast || j.result.forecast || [];
+          const max = Math.max(1, ...points.map((p) => p.upper || p.quantity));
+          const path = points
+            .map(
+              (p, i) =>
+                `${i ? "L" : "M"}${12 + (i * 260) / Math.max(1, points.length - 1)},${76 - (p.quantity / max) * 60}`,
+            )
+            .join(" ");
+          return (
+            <Card key={j.id}>
+              <View style={s.between}>
+                <Heading>{title(j.kind)}</Heading>
+                <Badge
+                  text={title(j.status)}
+                  tone={j.status === "failed" ? "critical" : "neutral"}
+                />
               </View>
-            ))}
-          </>
+              <Txt>
+                {shortLocation(
+                  data.locations.find((l) => l.id === j.payload.location_id)
+                    ?.name || j.payload.location_id,
+                )}
+              </Txt>
+              {j.error && <Txt>{j.error}</Txt>}
+              {j.result.selected_model && (
+                <Txt small>
+                  Selected model: {title(j.result.selected_model)} · Cutoff{" "}
+                  {j.result.source_cutoff}
+                </Txt>
+              )}
+              {points.length > 0 && (
+                <>
+                  <Svg width="100%" height="90" viewBox="0 0 290 90">
+                    <Path d={path} stroke={c.ink} strokeWidth="3" fill="none" />
+                  </Svg>
+                  <Txt small>
+                    {points
+                      .map(
+                        (p) =>
+                          `W${p.weeks_ahead}: ${number(p.quantity)} [${number(p.lower)}–${number(p.upper)}]`,
+                      )
+                      .join(" · ")}
+                  </Txt>
+                </>
+              )}
+              {j.result.selection && <Txt small>{j.result.selection}</Txt>}
+              {j.result.service_change_percentage_points != null && (
+                <Txt>
+                  Simulated service change:{" "}
+                  {number(j.result.service_change_percentage_points, 2)}{" "}
+                  percentage points. Synthetic scenario, not measured impact.
+                </Txt>
+              )}
+              <Go kind="job" id={j.id} />
+            </Card>
+          );
+        })}
+        {!jobs.length && (
+          <Empty text="No jobs for this medicine. Open a network location to run a forecast." />
         )}
-      </Card>
-      <Heading>Recent activity</Heading>
-      {data.audit
-        .slice(-8)
-        .reverse()
-        .map((a) => (
-          <Card key={a.id}>
-            <Txt>{title(a.action)}</Txt>
-            <Txt small>
-              {parseInstant(a.created_at).toLocaleString()} · {a.reference}
-            </Txt>
-          </Card>
-        ))}
-      {hasRole(data, "manager", "steward") &&
-        data.datasets.map((d) => (
-          <Card key={d.id}>
-            <Text style={s.label}>Dataset provenance</Text>
-            <Heading>{d.name}</Heading>
-            <Txt small>
-              {number(d.row_count)} records · {d.digest.slice(0, 12)}
-            </Txt>
-            <Txt small>
-              {String(d.provenance.evidence_type || "")} ·{" "}
-              {String(d.provenance.source_url || "")}
-            </Txt>
-          </Card>
-        ))}
+      </Disclosure>
+      <Disclosure title="Supply assistant">
+        <Card>
+          <View style={s.row}>
+            <Sparkles size={21} color={c.ink} />
+            <Heading>Supply assistant</Heading>
+          </View>
+          <Txt small>
+            Read-only retrieval from approved policy passages or a recorded
+            plan. Unsupported questions receive an explicit limitation.
+          </Txt>
+          <View style={s.row}>
+            {(["policy", "operations"] as const).map((m) => (
+              <Pressable
+                accessibilityRole="button"
+                key={m}
+                onPress={() => {
+                  setMode(m);
+                  setAnswer(null);
+                }}
+                style={s.chip}
+              >
+                <Text style={[s.small, { color: mode === m ? c.ink : c.dim }]}>
+                  {mode === m ? "● " : ""}
+                  {title(m)}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+          {mode === "operations" && (
+            <Field
+              label="Recorded plan ID"
+              value={reference}
+              onChangeText={setReference}
+            />
+          )}
+          <Field
+            label="Your question"
+            value={question}
+            onChangeText={setQuestion}
+            multiline
+            placeholder="Which transfer policy applies?"
+          />
+          <Button
+            title={asking ? "Checking sources…" : "Ask with sources"}
+            disabled={
+              asking ||
+              question.trim().length < 3 ||
+              (mode === "operations" && !reference.trim())
+            }
+            onPress={() => {
+              setAsking(true);
+              void safely(async () => {
+                const result = await api!.request<typeof answer>(
+                  "/assistant",
+                  "POST",
+                  {
+                    mode,
+                    question,
+                    as_of: session.asOf,
+                    ...(reference ? { reference_id: reference.trim() } : {}),
+                  },
+                );
+                setAnswer(result);
+              }).finally(() => setAsking(false));
+            }}
+          />
+          {answer && (
+            <>
+              <Txt>{answer.answer}</Txt>
+              {answer.citations?.map((citation, index) => (
+                <View key={index} style={{ gap: 5 }}>
+                  <Text style={s.label}>
+                    {citation.title || title(citation.type || "Source")} ·
+                    Version {citation.version || "—"}
+                  </Text>
+                  {citation.quote && <Txt>{citation.quote}</Txt>}
+                  {citation.type === "plan" && citation.id && (
+                    <Button
+                      title="Open the recorded plan evidence"
+                      secondary
+                      onPress={() => detail("plan", citation.id!)}
+                    />
+                  )}
+                </View>
+              ))}
+            </>
+          )}
+        </Card>
+      </Disclosure>
+      <Disclosure title="Recent activity & datasets">
+        {data.audit
+          .slice(-8)
+          .reverse()
+          .map((a) => (
+            <Card key={a.id}>
+              <Txt>{title(a.action)}</Txt>
+              <Txt small>
+                {parseInstant(a.created_at).toLocaleString()} · {a.reference}
+              </Txt>
+            </Card>
+          ))}
+        {hasRole(data, "manager", "steward") &&
+          data.datasets.map((d) => (
+            <Card key={d.id}>
+              <Text style={s.label}>Dataset provenance</Text>
+              <Heading>{d.name}</Heading>
+              <Txt small>
+                {number(d.row_count)} records · {d.digest.slice(0, 12)}
+              </Txt>
+              <Txt small>
+                {String(d.provenance.evidence_type || "")} ·{" "}
+                {String(d.provenance.source_url || "")}
+              </Txt>
+            </Card>
+          ))}
+      </Disclosure>
       <Card>
         <Heading>Connected account</Heading>
         <Txt>

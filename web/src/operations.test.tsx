@@ -153,7 +153,7 @@ it("delivery handoff needs receiver confirmation and posts checked quantities to
   fireEvent.click(screen.getByRole("button", { name: "Confirm handoff" }));
   expect(
     screen
-      .getByRole("button", { name: "Record proof & receive stock" })
+      .getByRole("button", { name: "Confirm receipt" })
       .hasAttribute("disabled"),
   ).toBe(true);
   fireEvent.change(screen.getByLabelText("Receiver name"), {
@@ -168,9 +168,7 @@ it("delivery handoff needs receiver confirmation and posts checked quantities to
       "I checked batch, expiry and physical quantities with the receiver.",
     ),
   );
-  fireEvent.click(
-    screen.getByRole("button", { name: "Record proof & receive stock" }),
-  );
+  fireEvent.click(screen.getByRole("button", { name: "Confirm receipt" }));
   await waitFor(() =>
     expect(command).toHaveBeenCalledWith(
       "/shipments/SHIP/proof",
@@ -182,4 +180,21 @@ it("delivery handoff needs receiver confirmation and posts checked quantities to
       }),
     ),
   );
+});
+
+it("keeps a supplier order open and uses the saved version for its next step", async()=>{
+  const order={id:"ORDER",kind:"supplier_order",state:"draft",version:1,payload:{supplier:"Test supplier",product_id:"P",location_id:"DEST",quantity:100,received:0,accepted:0,promised_on:null,history:[]}};
+  vi.mocked(api).mockResolvedValue({items:[order]});
+  vi.mocked(command).mockResolvedValueOnce({...order,state:"approved",version:2}).mockResolvedValueOnce({...order,state:"acknowledged",version:3,payload:{...order.payload,promised_on:"2026-11-08"}});
+  render(<Suppliers data={data} asOf="2026-11-01" onRefresh={async()=>{}} notify={()=>{}}/>);
+  fireEvent.click(await screen.findByRole("button",{name:/Review order/}));
+  fireEvent.change(screen.getByLabelText("Document reference"),{target:{value:"APPROVAL-001"}});
+  fireEvent.click(screen.getByRole("button",{name:"Approve order"}));
+  await screen.findByRole("button",{name:"Save promised date"});
+  expect(screen.getByRole("dialog")).toBeTruthy();
+  fireEvent.change(screen.getByLabelText("Document reference"),{target:{value:"SUPPLIER-002"}});
+  fireEvent.change(screen.getByLabelText("Supplier-confirmed promised arrival"),{target:{value:"2026-11-08"}});
+  fireEvent.click(screen.getByRole("button",{name:"Save promised date"}));
+  await waitFor(()=>expect(command).toHaveBeenLastCalledWith("/suppliers/orders/ORDER/events",expect.objectContaining({action:"acknowledge",version:2,promised_on:"2026-11-08"})));
+  await screen.findByRole("heading",{name:"Receive this consignment"});
 });

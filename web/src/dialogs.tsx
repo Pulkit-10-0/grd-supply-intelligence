@@ -40,6 +40,8 @@ import {
   title,
 } from "./utils";
 import { Badge, Empty, Loading, Modal } from "./ui";
+import { Details, NextStep, WorkflowProgress } from "./WorkflowProgress";
+import { supplyFlow, supplySteps } from "../../shared/workflow";
 
 type Base = {
   data: Data;
@@ -71,7 +73,7 @@ export function ResolveDialog({
     [quantity, setQuantity] = useState(
       existing
         ? existing.quantity - existing.fulfilled - existing.cancelled
-        : product.pack_size * 6,
+        : product.pack_size,
     ),
     [needed, setNeeded] = useState(
       existing?.needed_by ||
@@ -180,12 +182,17 @@ export function ResolveDialog({
   return (
     <Modal
       busy={busy}
-      title="Find the right supply response"
+      title="Create supply plan"
       eyebrow="NEW SUPPLY PLAN"
       onClose={onClose}
       wide
     >
       <div className="modal-body">
+        <WorkflowProgress
+          steps={supplySteps}
+          stage={0}
+          label="Supply progress"
+        />
         <div className="medicine-callout">
           <span className="medicine-icon">
             <PackageOpen size={23} />
@@ -196,11 +203,6 @@ export function ResolveDialog({
               {product.base_unit} · {product.pack_size} per pack
             </span>
           </div>
-          <Badge tone="demo">
-            {data.me.evidence_type === "synthetic"
-              ? "Synthetic scenario"
-              : "Declared source workflow"}
-          </Badge>
         </div>
         <div className="form-grid three">
           <label>
@@ -247,6 +249,21 @@ export function ResolveDialog({
             Enter a positive quantity in multiples of {product.pack_size}.
           </div>
         )}
+        {choice?.evidence &&
+          ((shortageDate && choice.evidence.arrival_date > shortageDate) ||
+            choice.evidence.arrival_date > needed) && (
+            <div className="notice delivery-risk">
+              <TriangleAlert size={18} />
+              <p>
+                <strong>Delivery timing needs attention.</strong> Arrival is
+                estimated for {dateLabel(choice.evidence.arrival_date)}
+                {shortageDate
+                  ? `, after the projected shortage on ${dateLabel(shortageDate)}`
+                  : `; your requested date is ${dateLabel(needed)}`}
+                . Arrange earlier supply for the uncovered period.
+              </p>
+            </div>
+          )}
         <div className="subsection-heading">
           <h3>Compare available sources</h3>
           <span>Checked against stock, shelf life and route rules</span>
@@ -295,22 +312,6 @@ export function ResolveDialog({
             )}
           </div>
         )}
-        {choice?.evidence &&
-          ((shortageDate && choice.evidence.arrival_date > shortageDate) ||
-            choice.evidence.arrival_date > needed) && (
-            <div className="notice delivery-risk">
-              <TriangleAlert size={18} />
-              <p>
-                <strong>Delivery timing needs attention.</strong> Arrival is
-                estimated for {dateLabel(choice.evidence.arrival_date)}
-                {shortageDate
-                  ? `, after the projected shortage on ${dateLabel(shortageDate)}`
-                  : `; your requested date is ${dateLabel(needed)}`}
-                . This transfer may leave an uncovered gap. Review an urgent
-                local response with the responsible operator.
-              </p>
-            </div>
-          )}
         {choice?.evidence && (
           <div className="decision-summary">
             <div>
@@ -342,10 +343,7 @@ export function ResolveDialog({
         </label>
         <div className="notice">
           <ShieldCheck size={18} />
-          <p>
-            A proposal does not move or reserve stock. A manager must review and
-            approve the exact plan version.
-          </p>
+          <p>Next: a manager reviews and approves this plan.</p>
         </div>
         {error && (
           <div className="inline-error" role="alert">
@@ -547,27 +545,20 @@ export function PlanDialog({
   onReceipt,
 }: Base & { plan: Plan; onReceipt: (s: Shipment) => void }) {
   const current = data.plans.find((x) => x.id === plan.id) || plan;
-  const [quantity, setQuantity] = useState(remainingDispatch(data, current)),
+  const flow = supplyFlow(data, current);
+  const [quantity, setQuantity] = useState(flow.unshipped),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [cancelling, setCancelling] = useState(false),
     [reason, setReason] = useState("");
   const product = data.products.find((x) => x.id === current.product_id),
     source = data.locations.find((x) => x.id === current.source_id),
-    dest = data.locations.find((x) => x.id === current.destination_id),
-    remaining = remainingDispatch(data, current),
-    shipments = data.shipments.filter((x) => x.plan_id === current.id);
-  const stage =
-    current.status === "proposed"
-      ? 0
-      : current.status === "approved"
-        ? 1
-        : ["partial", "dispatched"].includes(current.status)
-          ? 2
-          : current.status === "completed"
-            ? 3
-            : -1;
-  useEffect(() => setQuantity(remaining), [remaining]);
+    dest = data.locations.find((x) => x.id === current.destination_id);
+  const managerAccess =
+    hasRole(data, "manager") &&
+    canLocation(data, current.source_id) &&
+    canLocation(data, current.destination_id);
+  useEffect(() => setQuantity(flow.unshipped), [flow.unshipped]);
   async function run(action: "approve" | "dispatch" | "cancel" | "revise") {
     setBusy(true);
     setError("");
@@ -591,12 +582,12 @@ export function PlanDialog({
       );
       await onDone(
         action === "revise"
-          ? "Proposal revalidated. Review the new version before approval."
+          ? "Plan updated. Review and approve the new version."
           : action === "approve"
-            ? "Plan approved. Eligible stock is now reserved."
+            ? "Plan approved. Ready to dispatch."
             : action === "dispatch"
-              ? "Dispatch recorded. Stock is now in transit."
-              : "Unshipped reservations released. In-transit stock is preserved.",
+              ? "Dispatch recorded. Next: confirm delivery at the destination."
+              : "Unshipped stock released. Dispatched deliveries remain tracked.",
       );
       setCancelling(false);
     } catch (e) {
@@ -605,261 +596,320 @@ export function PlanDialog({
       setBusy(false);
     }
   }
+  const validQuantity =
+    Number.isSafeInteger(quantity) &&
+    quantity > 0 &&
+    quantity <= flow.unshipped &&
+    quantity % (product?.pack_size || 1) === 0;
   return (
     <Modal
       busy={busy}
-      title="A clear plan. A traceable outcome."
-      eyebrow={`SUPPLY PLAN · ${current.id.slice(0, 8).toUpperCase()} · VERSION ${current.version}`}
+      title="Supply plan"
+      eyebrow={`PLAN ${current.id.slice(0, 8).toUpperCase()}`}
       onClose={onClose}
       wide
     >
       <div className="modal-body">
-        <div className="journey-track">
-          {["Proposed", "Reserved", "In transit", "Received"].map(
-            (label, i) => (
-              <div key={label} className={stage >= i ? "done" : ""}>
-                <span>{stage > i ? <Check size={13} /> : i + 1}</span>
-                {label}
-              </div>
-            ),
-          )}
-        </div>
+        <WorkflowProgress
+          steps={supplySteps}
+          stage={flow.stage}
+          partialStep={flow.partialDispatch ? 2 : undefined}
+          cancelled={flow.cancelled}
+          label="Supply progress"
+        />
         <div className="plan-route">
           <div>
             <small>FROM</small>
             <strong>{shortLocation(source?.name || "Source")}</strong>
-            <span>
-              {source?.kind === "warehouse"
-                ? "Central warehouse"
-                : "Distributor"}
-            </span>
           </div>
           <span className="route-arrow">
-            <Truck size={24} />
-            <ArrowRight size={20} />
+            <ArrowRight size={22} />
           </span>
           <div>
             <small>TO</small>
             <strong>{shortLocation(dest?.name || "Destination")}</strong>
-            <span>{dest?.district}</span>
           </div>
           <Badge
             tone={
-              current.status === "completed"
-                ? "green"
-                : current.status === "cancelled"
-                  ? "neutral"
-                  : "blue"
+              flow.stage === 4 ? "green" : flow.cancelled ? "neutral" : "blue"
             }
           >
-            {title(current.status)}
+            {flow.label}
           </Badge>
         </div>
         <div className="plan-medicine">
           <PackageOpen size={22} />
           <strong>{shortProduct(product?.name || "Medicine")}</strong>
-          <span>
-            {number(current.quantity)} {product?.base_unit}s
-          </span>
+          <span>{number(current.quantity)} units</span>
         </div>
-        <div className="detail-grid">
+        <div className="fulfilment-totals">
           <div>
-            <small>Estimated arrival</small>
-            <strong>{dateLabel(current.arrival_date, true)}</strong>
+            <small>To dispatch</small>
+            <strong>{number(flow.cancelled ? 0 : flow.unshipped)}</strong>
           </div>
           <div>
-            <small>Minimum arrival shelf life</small>
-            <strong>{current.explanation.minimum_shelf_days} days</strong>
+            <small>In transit</small>
+            <strong>{number(flow.outstanding)}</strong>
           </div>
           <div>
-            <small>Protected at source</small>
-            <strong>{number(current.explanation.donor_protected)} units</strong>
+            <small>Received</small>
+            <strong>{number(flow.received)}</strong>
+            {flow.damaged > 0 && (
+              <small>
+                {number(flow.accepted)} usable · {number(flow.damaged)}{" "}
+                quarantined
+              </small>
+            )}
           </div>
           <div>
-            <small>Indicative total cost</small>
-            <strong>{money(current.explanation.cost_paise)}</strong>
+            <small>Expected arrival</small>
+            <strong>{dateLabel(current.arrival_date)}</strong>
           </div>
         </div>
-        <div className="subsection-heading">
-          <h3>Batch eligibility</h3>
-          <Badge tone="green">FEFO checked</Badge>
-        </div>
-        <div className="batch-summary">
-          {current.explanation.allocations.map((a) => {
-            const batch = data.batches.find((b) => b.id === a.batch_id);
-            return (
-              <div key={a.batch_id}>
-                <span>
-                  <PackageCheck size={17} />
-                  {batch?.code || a.batch_id.slice(0, 8)}
-                </span>
-                <span>{number(a.quantity)} units</span>
-                <span>Expires {dateLabel(batch?.expiry)}</span>
-              </div>
-            );
-          })}
-        </div>
-        <div className="notice">
-          <ShieldCheck size={18} />
-          <p>
-            {current.explanation.policy_source}.{" "}
-            {current.status === "proposed"
-              ? "Approval rechecks the source balance, current rules and exact plan version."
-              : "Stock and subsequent actions remain linked to this plan and its audit history."}
-          </p>
-        </div>
-        {shipments.length > 0 && (
-          <>
-            <div className="subsection-heading">
-              <h3>Shipment trail</h3>
-              <span>{shipments.length} recorded</span>
-            </div>
-            <div className="shipment-trail">
-              {shipments.map((s) => {
-                const pending = s.lines.reduce(
-                  (a, l) => a + l.quantity - l.received,
-                  0,
-                );
-                return (
-                  <div key={s.id}>
-                    <span className="trail-icon">
-                      <Truck size={17} />
-                    </span>
-                    <div>
-                      <strong>{s.id.slice(0, 8).toUpperCase()}</strong>
-                      <small>
-                        {number(s.lines.reduce((a, l) => a + l.quantity, 0))}{" "}
-                        dispatched · {number(pending)} to confirm
-                      </small>
-                    </div>
-                    {pending ? (
-                      <button
-                        className="button secondary compact"
-                        disabled={
-                          !hasRole(data, "operator", "manager") ||
-                          !canLocation(data, s.destination_id)
-                        }
-                        onClick={() => onReceipt(s)}
-                      >
-                        Record receipt
-                        <ArrowRight size={14} />
-                      </button>
-                    ) : (
-                      <Badge tone="green">Confirmed</Badge>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </>
-        )}
-        {cancelling && (
-          <label className="full-label">
-            Reason for cancellation
-            <textarea
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder="Explain why the remaining plan is being cancelled"
+        <NextStep
+          title={
+            flow.stage === 4
+              ? "Delivery complete"
+              : flow.cancelled && !flow.outstanding
+                ? "Plan cancelled"
+                : "Next step"
+          }
+          complete={flow.stage === 4}
+        >
+          {flow.instruction}
+        </NextStep>
+        {flow.canDispatch && (
+          <label className="full-label dispatch-field">
+            Dispatch quantity
+            <input
+              aria-label="Dispatch quantity"
+              type="number"
+              min={product?.pack_size || 1}
+              step={product?.pack_size || 1}
+              max={flow.unshipped}
+              value={quantity}
+              disabled={busy}
+              onChange={(e) => setQuantity(Number(e.target.value))}
             />
+            <small>
+              {number(flow.unshipped)} units available to dispatch · packs of{" "}
+              {product?.pack_size || 1}
+            </small>
+            {!validQuantity && (
+              <span className="text-coral">
+                Enter whole packs within the remaining quantity.
+              </span>
+            )}
           </label>
+        )}
+        {!!flow.shipments.length && (
+          <div className="shipment-trail">
+            {flow.shipments.map((shipment) => {
+              const outstanding = shipment.lines.reduce(
+                (n, l) => n + l.quantity - l.received,
+                0,
+              );
+              return (
+                <div key={shipment.id}>
+                  <span className="trail-icon">
+                    <Truck size={17} />
+                  </span>
+                  <div>
+                    <strong>
+                      Delivery {shipment.id.slice(0, 8).toUpperCase()}
+                    </strong>
+                    <small>
+                      {outstanding
+                        ? `${number(outstanding)} units awaiting receipt`
+                        : "All quantities received"}{" "}
+                      · {dateLabel(shipment.expected_on)}
+                    </small>
+                  </div>
+                  {outstanding ? (
+                    <button
+                      className="button secondary compact"
+                      disabled={
+                        busy ||
+                        !hasRole(data, "operator", "manager") ||
+                        !canLocation(data, shipment.destination_id)
+                      }
+                      onClick={() => onReceipt(shipment)}
+                    >
+                      Record receipt <ArrowRight size={14} />
+                    </button>
+                  ) : (
+                    <Badge tone="green">Received</Badge>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+        {data.requests.some(
+          (r) =>
+            r.id === current.request_id && current.arrival_date > r.needed_by,
+        ) && (
+          <div className="notice delivery-risk">
+            <TriangleAlert size={18} />
+            <p>
+              Arrival is after the requested date. Arrange earlier supply for
+              the uncovered period.
+            </p>
+          </div>
+        )}
+        <Details title="Batch allocation & planning details">
+          <div className="detail-grid">
+            <div>
+              <small>Minimum arrival shelf life</small>
+              <strong>{current.explanation.minimum_shelf_days} days</strong>
+            </div>
+            <div>
+              <small>Protected at source</small>
+              <strong>
+                {number(current.explanation.donor_protected)} units
+              </strong>
+            </div>
+            <div>
+              <small>Indicative cost</small>
+              <strong>{money(current.explanation.cost_paise)}</strong>
+            </div>
+            <div>
+              <small>Plan version</small>
+              <strong>{current.version}</strong>
+            </div>
+          </div>
+          <div className="batch-summary">
+            {current.explanation.allocations.map((a) => {
+              const batch = data.batches.find((b) => b.id === a.batch_id);
+              return (
+                <div key={a.batch_id}>
+                  <span>{batch?.code || a.batch_id.slice(0, 8)}</span>
+                  <span>{number(a.quantity)} units</span>
+                  <span>Expires {dateLabel(batch?.expiry)}</span>
+                </div>
+              );
+            })}
+          </div>
+          <p className="body-muted">{current.explanation.policy_source}</p>
+        </Details>
+        {!flow.cancelled && flow.stage !== 4 && (
+          <Details title="Change or cancel this plan">
+            {current.status === "proposed" &&
+              hasRole(data, "planner", "manager") &&
+              canLocation(data, current.source_id) &&
+              canLocation(data, current.destination_id) && (
+                <button
+                  className="button secondary"
+                  disabled={busy}
+                  onClick={() => run("revise")}
+                >
+                  Revalidate proposal
+                </button>
+              )}
+            {managerAccess && (
+              <div className="exception-actions">
+                <p>
+                  Cancellation releases unshipped stock. Deliveries already
+                  dispatched still need a receipt.
+                </p>
+                {!cancelling ? (
+                  <button
+                    className="text-button danger"
+                    disabled={busy}
+                    onClick={() => setCancelling(true)}
+                  >
+                    Cancel unshipped plan
+                  </button>
+                ) : (
+                  <>
+                    <label className="full-label">
+                      Reason for cancellation
+                      <textarea
+                        value={reason}
+                        onChange={(e) => setReason(e.target.value)}
+                        placeholder="Why is the remaining plan being cancelled?"
+                      />
+                    </label>
+                    <button
+                      className="button secondary"
+                      disabled={busy}
+                      onClick={() => setCancelling(false)}
+                    >
+                      Keep plan
+                    </button>
+                    <button
+                      className="button danger"
+                      disabled={busy || reason.trim().length < 3}
+                      onClick={() => run("cancel")}
+                    >
+                      Confirm cancellation
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+          </Details>
         )}
         {error && (
           <div className="inline-error" role="alert">
             {error}
             {error.toLowerCase().includes("stale") && (
               <p>
-                Refresh the workspace, then revise this proposal to revalidate
-                its current inputs.
+                Refresh, then revalidate the proposal under “Change or cancel
+                this plan”.
               </p>
             )}
           </div>
         )}
       </div>
       <footer className="modal-footer">
-        <div>
-          {hasRole(data, "manager") &&
-            canLocation(data, current.source_id) &&
-            canLocation(data, current.destination_id) &&
-            !["completed", "cancelled"].includes(current.status) && (
-              <button
-                className="text-button danger"
-                disabled={busy || (cancelling && reason.trim().length < 3)}
-                onClick={() =>
-                  cancelling ? run("cancel") : setCancelling(true)
-                }
-              >
-                {cancelling ? "Confirm cancellation" : "Cancel unshipped plan"}
-              </button>
-            )}
-        </div>
+        <button className="button secondary" disabled={busy} onClick={onClose}>
+          Close
+        </button>
         <div className="footer-buttons">
-          <button
-            className="button secondary"
-            disabled={busy}
-            onClick={onClose}
-          >
-            Close
-          </button>
-          {current.status === "proposed" &&
-            hasRole(data, "planner", "manager") &&
-            canLocation(data, current.source_id) &&
-            canLocation(data, current.destination_id) && (
-              <button
-                className="button secondary"
-                disabled={busy || cancelling}
-                onClick={() => run("revise")}
-              >
-                Revalidate proposal
-              </button>
-            )}
-          {current.status === "proposed" &&
-            hasRole(data, "manager") &&
-            canLocation(data, current.source_id) &&
-            canLocation(data, current.destination_id) && (
-              <button
-                className="button primary"
-                disabled={busy || cancelling}
-                onClick={() => run("approve")}
-              >
-                {busy ? (
-                  <LoaderCircle className="spin" size={16} />
-                ) : (
-                  <ShieldCheck size={17} />
-                )}
-                Approve & reserve
-              </button>
-            )}
-          {["approved", "partial", "dispatched"].includes(current.status) &&
-            remaining > 0 &&
-            hasRole(data, "operator", "manager") &&
-            canLocation(data, current.source_id) && (
-              <>
-                <input
-                  className="dispatch-quantity"
-                  aria-label="Dispatch quantity"
-                  type="number"
-                  min={product?.pack_size || 1}
-                  step={product?.pack_size || 1}
-                  max={remaining}
-                  value={quantity}
-                  onChange={(e) => setQuantity(Number(e.target.value))}
-                />
-                <button
-                  className="button primary"
-                  disabled={
-                    busy ||
-                    quantity <= 0 ||
-                    quantity > remaining ||
-                    quantity % (product?.pack_size || 1) !== 0 ||
-                    cancelling
-                  }
-                  onClick={() => run("dispatch")}
-                >
-                  <Truck size={16} />
-                  Dispatch stock
-                </button>
-              </>
-            )}
+          {flow.next === "receive" && flow.canDispatch && (
+            <button
+              className="button secondary"
+              disabled={busy || cancelling || !validQuantity}
+              onClick={() => run("dispatch")}
+            >
+              Dispatch remaining stock
+            </button>
+          )}
+          {flow.next === "approve" && (
+            <button
+              className="button primary"
+              disabled={busy || cancelling}
+              onClick={() => run("approve")}
+            >
+              {busy ? (
+                <LoaderCircle className="spin" size={16} />
+              ) : (
+                <ShieldCheck size={17} />
+              )}
+              Approve & reserve
+            </button>
+          )}
+          {flow.next === "dispatch" && (
+            <button
+              className="button primary"
+              disabled={busy || cancelling || !validQuantity}
+              onClick={() => run("dispatch")}
+            >
+              <Truck size={16} />
+              Dispatch stock
+            </button>
+          )}
+          {flow.next === "receive" && flow.receipt && (
+            <button
+              className="button primary"
+              disabled={busy || cancelling}
+              onClick={() => onReceipt(flow.receipt!)}
+            >
+              <PackageCheck size={17} />
+              Record receipt
+            </button>
+          )}
         </div>
       </footer>
     </Modal>
@@ -885,10 +935,28 @@ export function ReceiptDialog({
         })),
     ),
     [busy, setBusy] = useState(false),
-    [error, setError] = useState("");
+    [error, setError] = useState(""),
+    [receiver, setReceiver] = useState(""),
+    [reference, setReference] = useState(""),
+    [confirmed, setConfirmed] = useState(false),
+    [shortLines, setShortLines] = useState<string[]>([]);
   const dest = data.locations.find((x) => x.id === current.destination_id);
   const valid =
-    lines.some((x) => x.accepted + x.damaged > 0) &&
+    confirmed &&
+    receiver.trim().length >= 2 &&
+    reference.trim().length >= 3 &&
+    hasRole(data, "operator", "manager") &&
+    canLocation(data, current.destination_id) &&
+    (lines.some((x) => x.accepted + x.damaged > 0) || shortLines.length > 0) &&
+    shortLines.every((id) => {
+      const line = lines.find((l) => l.line_id === id),
+        original = current.lines.find((l) => l.id === id);
+      return (
+        line &&
+        original &&
+        line.accepted + line.damaged < original.quantity - original.received
+      );
+    }) &&
     lines.every(
       (x) =>
         Number.isSafeInteger(x.accepted) &&
@@ -908,7 +976,11 @@ export function ReceiptDialog({
   async function receive() {
     setBusy(true);
     try {
-      await command(`/shipments/${current.id}/receipts`, {
+      await command(`/shipments/${current.id}/proof`, {
+        receiver: receiver.trim(),
+        reference: reference.trim(),
+        confirmed,
+        short_lines: shortLines,
         as_of: asOf,
         lines: lines.filter((x) => x.accepted + x.damaged > 0),
       });
@@ -925,11 +997,16 @@ export function ReceiptDialog({
   return (
     <Modal
       busy={busy}
-      title="Confirm what actually arrived"
+      title="Record delivery"
       eyebrow="RECEIPT CONFIRMATION"
       onClose={onClose}
     >
       <div className="modal-body">
+        <WorkflowProgress
+          steps={supplySteps}
+          stage={3}
+          label="Supply progress"
+        />
         <div className="receipt-destination">
           <span className="location-icon healthy">
             <PackageCheck size={25} />
@@ -943,6 +1020,9 @@ export function ReceiptDialog({
             </p>
           </div>
         </div>
+        <NextStep title="Check the delivery">
+          Enter the quantities physically received at this location.
+        </NextStep>
         {lines.map((line, index) => {
           const source = current.lines.find((x) => x.id === line.line_id)!;
           const batch = data.batches.find(
@@ -985,6 +1065,20 @@ export function ReceiptDialog({
                   />
                 </label>
               </div>
+              <label className="check-field">
+                <input
+                  type="checkbox"
+                  checked={shortLines.includes(line.line_id)}
+                  onChange={(e) =>
+                    setShortLines((prev) =>
+                      e.target.checked
+                        ? [...prev, line.line_id]
+                        : prev.filter((id) => id !== line.line_id),
+                    )
+                  }
+                />
+                Report a short delivery
+              </label>
               {line.damaged > 0 && (
                 <label className="full-label">
                   Damage / discrepancy reason
@@ -999,18 +1093,62 @@ export function ReceiptDialog({
             </div>
           );
         })}
+        <div className="form-grid">
+          <label>
+            Receiver name
+            <input
+              value={receiver}
+              maxLength={120}
+              onChange={(e) => setReceiver(e.target.value)}
+              placeholder="Who checked the delivery?"
+            />
+          </label>
+          <label>
+            Delivery document / discrepancy reference
+            <input
+              value={reference}
+              maxLength={120}
+              onChange={(e) => setReference(e.target.value)}
+              placeholder="Delivery note or reference"
+            />
+          </label>
+        </div>
+        <label className="check-field">
+          <input
+            type="checkbox"
+            checked={confirmed}
+            onChange={(e) => setConfirmed(e.target.checked)}
+          />
+          I checked batch, expiry and physical quantities with the receiver.
+        </label>
         <div className="notice">
           <LockKeyhole size={18} />
           <p>
-            Only accepted quantities become usable. Damaged units enter
-            quarantine and open a review case. You may confirm a partial
-            delivery.
+            Accepted units enter stock. Damaged units go to quarantine.
+            Unreceived units stay in transit.
           </p>
+        </div>
+        <div className="receipt-summary" aria-live="polite">
+          <strong>
+            {number(lines.reduce((n, l) => n + l.accepted, 0))} accepted
+          </strong>
+          <span>
+            {number(lines.reduce((n, l) => n + l.damaged, 0))} damaged
+          </span>
+          <span>
+            {number(
+              Math.max(
+                0,
+                current.lines.reduce((n, l) => n + l.quantity - l.received, 0) -
+                  lines.reduce((n, l) => n + l.accepted + l.damaged, 0),
+              ),
+            )}{" "}
+            still in transit
+          </span>
         </div>
         {!valid && (
           <p className="validation-hint">
-            Enter quantities within the remaining shipment amount. Damage
-            requires a reason.
+            Complete receiver details and check quantities before confirming.
           </p>
         )}
         {error && (
@@ -1021,7 +1159,7 @@ export function ReceiptDialog({
       </div>
       <footer className="modal-footer">
         <button className="button secondary" disabled={busy} onClick={onClose}>
-          Cancel
+          Back
         </button>
         <button
           className="button primary"

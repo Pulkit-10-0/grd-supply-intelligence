@@ -3,6 +3,8 @@ import react from "@vitejs/plugin-react";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
+const devApiOrigin = process.env.GRD_DEV_API_ORIGIN || "http://127.0.0.1:8011";
+
 export default defineConfig({
   plugins: [
     react(),
@@ -38,20 +40,17 @@ export default defineConfig({
                   return [x.slice(0, i), x.slice(i + 1)];
                 }),
             );
-            const response = await fetch(
-              "http://127.0.0.1:8011/api/v1/auth/login",
-              {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  email: "demo@grd.local",
-                  password: env.GRD_ADMIN_PASSWORD,
-                }),
-              },
-            );
+            const response = await fetch(`${devApiOrigin}/api/v1/auth/login`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                email: process.env.GRD_DEV_LOGIN_EMAIL || "demo@grd.local",
+                password: env.GRD_ADMIN_PASSWORD,
+              }),
+            });
             const body = await response.json();
             if (!response.ok) throw new Error("Demo login unavailable");
-            const me = await fetch("http://127.0.0.1:8011/api/v1/me", {
+            const me = await fetch(`${devApiOrigin}/api/v1/me`, {
               headers: { Authorization: `Bearer ${body.access_token}` },
             });
             if ((await me.json()).evidence_type !== "synthetic")
@@ -74,8 +73,8 @@ export default defineConfig({
   ],
   server: {
     proxy: {
-      "/api": { target: "http://127.0.0.1:8011", changeOrigin: true },
-      "/health": { target: "http://127.0.0.1:8011", changeOrigin: true },
+      "/api": { target: devApiOrigin, changeOrigin: true },
+      "/health": { target: devApiOrigin, changeOrigin: true },
     },
   },
   build: {

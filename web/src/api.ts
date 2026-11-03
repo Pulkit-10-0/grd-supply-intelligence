@@ -158,7 +158,7 @@ export async function localDemo() {
   const response = await fetch("/__local-demo", { method: "POST" });
   const value = await response.json();
   if (!response.ok)
-    throw new Error(value.detail || "Local demo is unavailable.");
+    throw new Error(value.detail || "Local workspace is unavailable.");
   setToken(value.access_token);
 }
 export async function upload<T>(path: string, body: FormData): Promise<T> {

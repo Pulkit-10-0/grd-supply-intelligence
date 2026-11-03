@@ -30,7 +30,7 @@ export function serverOrigin(value: string) {
     );
   if (url.protocol !== "https:" && !(url.protocol === "http:" && local))
     throw new Error(
-      "Use HTTPS for hosted servers. HTTP is allowed only for a local demo.",
+      "Use HTTPS for hosted servers. HTTP is allowed only for local development.",
     );
   return url.origin;
 }
@@ -104,7 +104,7 @@ export class Transport {
         );
       if (error instanceof TypeError)
         throw new Error(
-          "Cannot reach the server. Check its address and your connection; a sleeping demo server may need a moment to start.",
+          "Cannot reach the server. Check its address and your connection; the server may need a moment to start.",
         );
       throw error;
     } finally {

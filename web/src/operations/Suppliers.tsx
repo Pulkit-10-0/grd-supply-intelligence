@@ -16,6 +16,8 @@ import {
   shortProduct,
 } from "../utils";
 import { Field, Status, useOperation } from "./common";
+import { Details, NextStep, WorkflowProgress } from "../WorkflowProgress";
+import { supplierSteps, workflowStage } from "../../../shared/workflow";
 
 export function Suppliers({
   data,
@@ -38,8 +40,10 @@ export function Suppliers({
         "",
     ),
     [supplier, setSupplier] = useState(""),
-    [quantity, setQuantity] = useState("100"),
-    [cost, setCost] = useState("0"),
+    [quantity, setQuantity] = useState(""),
+    [cost, setCost] = useState(""),
+    [leadDays, setLeadDays] = useState("7"),
+    [coverageDays, setCoverageDays] = useState("28"),
     [suggestion, setSuggestion] = useState<Suggestion | null>(null),
     [reference, setReference] = useState(""),
     [promised, setPromised] = useState(asOf),
@@ -67,12 +71,27 @@ export function Suppliers({
       .catch((e) => setError(e.message));
   }, []);
   useEffect(() => {
+    quantityEdited.current = false;
+  }, [product, location, creating]);
+  useEffect(() => {
+    setCost(
+      String(
+        data.products.find((p) => p.id === product)?.unit_cost_paise ?? "",
+      ),
+    );
+  }, [product, data.products]);
+  useEffect(() => {
     let active = true;
     setSuggestion(null);
-    quantityEdited.current = false;
-    if (creating)
+    if (
+      creating &&
+      Number(leadDays) >= 1 &&
+      Number(leadDays) <= 90 &&
+      Number(coverageDays) >= 1 &&
+      Number(coverageDays) <= 180
+    )
       void api<Suggestion>(
-        `/suppliers/suggestion?product_id=${encodeURIComponent(product)}&location_id=${encodeURIComponent(location)}&as_of=${asOf}`,
+        `/suppliers/suggestion?product_id=${encodeURIComponent(product)}&location_id=${encodeURIComponent(location)}&as_of=${asOf}&lead_days=${Number(leadDays)}&coverage_days=${Number(coverageDays)}`,
       )
         .then((r) => {
           if (active) {
@@ -85,24 +104,30 @@ export function Suppliers({
     return () => {
       active = false;
     };
-  }, [product, location, asOf, creating]);
+  }, [product, location, asOf, creating, leadDays, coverageDays]);
   const canPlan = hasRole(data, "planner", "manager"),
     canManage = hasRole(data, "manager");
   async function event(action: string) {
     if (!selected) return;
-    await transition(selected, `/suppliers/orders/${selected.id}/events`, {
-      action,
-      as_of: asOf,
-      reference,
-      promised_on: action === "acknowledge" ? promised : null,
-    });
-    setSelected(null);
+    const updated = await transition(
+      selected,
+      `/suppliers/orders/${selected.id}/events`,
+      {
+        action,
+        as_of: asOf,
+        reference,
+        promised_on: action === "acknowledge" ? promised : null,
+      },
+    );
+    setSelected(updated);
+    setReference("");
+    setReceiptQty(String(updated.payload.quantity - updated.payload.received));
   }
   return (
     <>
       <SectionTitle
         eyebrow="EXTERNAL REPLENISHMENT"
-        title="Order what the network still needs"
+        title="Supplier orders"
         action={
           <button
             className="button primary"
@@ -139,6 +164,13 @@ export function Suppliers({
               <Status state={o.state} />
             </div>
             <h3>{o.payload.supplier}</h3>
+            <WorkflowProgress
+              steps={supplierSteps}
+              stage={workflowStage("supplier_order", o.state)}
+              cancelled={o.state === "cancelled"}
+              compact
+              label="Supplier progress"
+            />
             <p>
               {shortProduct(
                 data.products.find((p) => p.id === o.payload.product_id)
@@ -197,8 +229,8 @@ export function Suppliers({
                   unit_cost_paise: Number(cost),
                   as_of: asOf,
                   reason: reference,
-                  lead_days: 7,
-                  coverage_days: 28,
+                  lead_days: Number(leadDays),
+                  coverage_days: Number(coverageDays),
                 });
                 setCreating(false);
                 notify("Supplier order drafted. Manager approval is required.");
@@ -232,6 +264,30 @@ export function Suppliers({
                 </select>
               </Field>
             </div>
+            <Details title="Planning assumptions">
+              <div className="ops-form-row">
+                <Field label="Delivery lead · days">
+                  <input
+                    type="number"
+                    required
+                    min="1"
+                    max="90"
+                    value={leadDays}
+                    onChange={(e) => setLeadDays(e.target.value)}
+                  />
+                </Field>
+                <Field label="Stock coverage · days">
+                  <input
+                    type="number"
+                    required
+                    min="1"
+                    max="180"
+                    value={coverageDays}
+                    onChange={(e) => setCoverageDays(e.target.value)}
+                  />
+                </Field>
+              </div>
+            </Details>
             {suggestion && (
               <div className="calculation-card">
                 <strong>
@@ -254,8 +310,8 @@ export function Suppliers({
                   </span>
                 </div>
                 <small>
-                  {suggestion.formula}. 7-day lead + 28-day coverage.{" "}
-                  {suggestion.warning}
+                  {suggestion.formula}. {suggestion.lead_days}-day lead +{" "}
+                  {suggestion.coverage_days}-day coverage. {suggestion.warning}
                 </small>
               </div>
             )}
@@ -319,21 +375,45 @@ export function Suppliers({
           wide
         >
           <div className="modal-body">
+            <WorkflowProgress
+              steps={supplierSteps}
+              stage={workflowStage("supplier_order", selected.state)}
+              cancelled={selected.state === "cancelled"}
+              label="Supplier progress"
+            />
             <Status state={selected.state} />
+            <NextStep
+              title={
+                ["received", "cancelled"].includes(selected.state)
+                  ? "Order closed"
+                  : "Next step"
+              }
+              complete={selected.state === "received"}
+            >
+              {selected.state === "draft"
+                ? "Review the order and approve it before confirming with the supplier."
+                : selected.state === "approved"
+                  ? "Record the arrival date confirmed by the supplier."
+                  : ["acknowledged", "partial"].includes(selected.state)
+                    ? "Check the consignment, then record received quantities and batch details."
+                    : "This order has no outstanding actions."}
+            </NextStep>
             <p>
               {number(selected.payload.quantity)} ordered ·{" "}
               {number(selected.payload.received)} physically received ·{" "}
               {number(selected.payload.accepted)} usable
             </p>
             {error && <div className="error-banner">{error}</div>}
-            <Field label="Document / confirmation / discrepancy reference">
-              <input
-                minLength={3}
-                required
-                value={reference}
-                onChange={(e) => setReference(e.target.value)}
-              />
-            </Field>
+            {!["received", "cancelled"].includes(selected.state) && (
+              <Field label="Document reference">
+                <input
+                  minLength={3}
+                  required
+                  value={reference}
+                  onChange={(e) => setReference(e.target.value)}
+                />
+              </Field>
+            )}
             {selected.state === "approved" && (
               <Field label="Supplier-confirmed promised arrival">
                 <input
@@ -361,7 +441,7 @@ export function Suppliers({
                   disabled={busy || reference.length < 3}
                   onClick={() => run(() => event("acknowledge"))}
                 >
-                  Record supplier acknowledgement
+                  Save promised date
                 </button>
               )}
               {!["received", "cancelled"].includes(selected.state) &&
@@ -439,21 +519,21 @@ export function Suppliers({
                     className="button primary"
                     disabled={busy || reference.length < 3}
                   >
-                    Confirm physical receipt
+                    Confirm receipt
                   </button>
                 </form>
               )}
-            <h3>Order trail</h3>
-            {selected.payload.history.map((h, i) => (
-              <p className="trail-line" key={i}>
-                <b>{h.action}</b> {h.reference} {h.date && dateLabel(h.date)}
+            <Details title="Order history & confirmation details">
+              {selected.payload.history.map((h, i) => (
+                <p className="trail-line" key={i}>
+                  <b>{h.action}</b> {h.reference} {h.date && dateLabel(h.date)}
+                </p>
+              ))}
+              <p className="ops-note">
+                Your team records the supplier’s confirmation here. Contact the
+                supplier through your usual channel.
               </p>
-            ))}
-            <p className="ops-note">
-              Acknowledgement is recorded by your team from a real or explicitly
-              demonstrated supplier confirmation. No email, purchase or payment
-              is sent by this platform.
-            </p>
+            </Details>
           </div>
         </Modal>
       )}

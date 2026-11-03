@@ -1,4 +1,11 @@
 import { buildActions, type Action } from "./actions";
+import {
+  initialProduct,
+  initialLocation,
+  supplyFlow,
+  supplySteps,
+} from "../../shared/workflow";
+import { Details, WorkflowProgress } from "./WorkflowProgress";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity,
@@ -107,15 +114,15 @@ export type Dialog =
   | null;
 let demoAttempt: Promise<void> | undefined;
 const nav = [
-  { id: "overview", label: "Network overview", icon: LayoutDashboard },
+  { id: "overview", label: "Network", icon: LayoutDashboard },
   { id: "actions", label: "Action centre", icon: Target },
-  { id: "planning", label: "Planning studio", icon: LayersIcon },
+  { id: "planning", label: "Planning", icon: LayersIcon },
   { id: "operations", label: "Operations desk", icon: Truck },
-  { id: "inventory", label: "Inventory & batches", icon: Boxes },
-  { id: "forecasts", label: "Forecasts & evidence", icon: Activity },
-  { id: "evidence", label: "Evidence & stock cards", icon: ShieldCheck },
+  { id: "inventory", label: "Inventory", icon: Boxes },
+  { id: "forecasts", label: "Forecasts", icon: Activity },
+  { id: "evidence", label: "Stock & evidence", icon: ShieldCheck },
   { id: "activity", label: "Operations log", icon: FileCheck2 },
-  { id: "sources", label: "Data & provenance", icon: Database },
+  { id: "sources", label: "Data sources", icon: Database },
 ] as const;
 
 export default function App() {
@@ -165,19 +172,9 @@ export default function App() {
       const next = await loadData();
       if (!current()) return;
       setData(next);
-      setProductId(
-        (x) =>
-          x ||
-          next.products.find((p) => p.name.includes("Cetirizine"))?.id ||
-          next.products[0]?.id ||
-          "",
-      );
-      setSelected(
-        (x) =>
-          x ||
-          next.locations.find((l) => l.name.includes("Silchar"))?.id ||
-          next.locations[0]?.id ||
-          "",
+      setProductId((current) => initialProduct(next, current));
+      setSelected((current) =>
+        initialLocation(next, initialProduct(next), current),
       );
       setError("");
       setLastRefresh(new Date());
@@ -360,7 +357,7 @@ export default function App() {
           <div className="sidebar-system">
             <span className={`live-dot ${error ? "offline" : ""}`} />
             <span>
-              {error ? "Connection needs attention" : "Backend connected"}
+              {error ? "Connection needs attention" : "Connected"}
               <small>
                 {data.reconciliation.ok
                   ? "Inventory ledger reconciled"
@@ -371,7 +368,8 @@ export default function App() {
           <button className="user-profile" onClick={logout} title="Sign out">
             <span className="avatar">GR</span>
             <span>
-              GRD workspace<small>{title(data.me.role)} · Sign out</small>
+              {data.me.email}
+              <small>{title(data.me.role)} · Sign out</small>
             </span>
             <LogOut size={16} />
           </button>
@@ -399,13 +397,13 @@ export default function App() {
             <strong>{nav.find((x) => x.id === view)?.label}</strong>
           </div>
           <div className="topbar-right">
-            <Badge tone="demo">
-              {data.me.evidence_type === "synthetic"
-                ? "Synthetic demo"
-                : "Shadow workspace"}
-            </Badge>
             <span className="header-date">{dateLabel(asOf, true)}</span>
-            <button className="icon-button" aria-label="Refresh all workspace records" disabled={refreshing} onClick={reload}>
+            <button
+              className="icon-button"
+              aria-label="Refresh all workspace records"
+              disabled={refreshing}
+              onClick={reload}
+            >
               <RefreshCw size={17} className={refreshing ? "spin" : ""} />
             </button>
             <button
@@ -440,14 +438,12 @@ export default function App() {
                 <div>
                   <p className="eyebrow">NORTH EAST · CONNECTED SUPPLY</p>
                   <h1>
-                    {view === "overview"
-                      ? "A clearer view. A stronger supply."
-                      : "Good decisions, put into motion."}
+                    {view === "overview" ? "Network overview" : "Action centre"}
                   </h1>
                   <p>
                     {view === "overview"
                       ? "See where medicine is needed. Know what to do next."
-                      : "Prioritise, review and follow every action through to receipt."}
+                      : "Review, dispatch and receive your supply orders."}
                   </p>
                 </div>
                 <div className="page-actions">
@@ -777,14 +773,9 @@ export default function App() {
                         ? "Ledger reconciled"
                         : "Reconciliation requires review"}
                     </span>
-                    <span>
-                      <Database size={15} />
-                      {data.me.evidence_type === "synthetic"
-                        ? "Synthetic operating data · approximate demo sites"
-                        : "Declared operating data · see provenance"}
-                    </span>
+
                     <button onClick={() => navigate("sources")}>
-                      See data provenance <ExternalLink size={13} />
+                      Data sources <ExternalLink size={13} />
                     </button>
                   </div>
                 </>
@@ -810,16 +801,18 @@ export default function App() {
             />
           )}
           {view === "overview" && currentNetwork && (
-            <RiskGrid
-              rows={rows}
-              onCell={(id) => {
-                const row = rows.find((r) => r.location_id === id);
-                if (row) {
-                  setSelected(id);
-                  setDialog({ type: "timeline", row });
-                }
-              }}
-            />
+            <Details title="Daily stock timeline">
+              <RiskGrid
+                rows={rows}
+                onCell={(id) => {
+                  const row = rows.find((r) => r.location_id === id);
+                  if (row) {
+                    setSelected(id);
+                    setDialog({ type: "timeline", row });
+                  }
+                }}
+              />
+            </Details>
           )}
           {view === "planning" && (
             <PlanningStudio
@@ -979,7 +972,12 @@ export default function App() {
           data={data}
           shipment={dialog.shipment}
           asOf={asOf}
-          onClose={() => setDialog(null)}
+          onClose={() => {
+            const plan = data.plans.find(
+              (p) => p.id === dialog.shipment.plan_id,
+            );
+            setDialog(plan ? { type: "plan", plan } : null);
+          }}
           onDone={finish}
         />
       )}
@@ -1172,14 +1170,10 @@ function Login({
                 onClick={() => signIn(true)}
               >
                 <Sparkles size={17} />
-                Explore local demo
+                Open local workspace
                 <ArrowRight size={16} />
               </button>
-              <small className="login-note">
-                Uses only the local synthetic organisation.
-                <br />
-                No company records or credentials are embedded.
-              </small>
+              <small className="login-note">Local development workspace.</small>
             </>
           )}
         </div>
@@ -1231,9 +1225,20 @@ function ActionCard({ item, onClick }: { item: Action; onClick: () => void }) {
       </div>
       <h3>{item.title}</h3>
       <p>{item.description}</p>
+      {item.progress !== undefined && (
+        <WorkflowProgress
+          steps={supplySteps}
+          stage={item.progress}
+          partialStep={item.partialDispatch ? 2 : undefined}
+          compact
+          label="Order progress"
+        />
+      )}
       <div className="action-card-bottom">
         <span>{item.product}</span>
-        <ArrowRight size={16} />
+        <strong>
+          {item.nextLabel || "Review"} <ArrowRight size={14} />
+        </strong>
       </div>
     </button>
   );
@@ -1415,11 +1420,40 @@ function ActionCentre({
   onReceipt: (x: Shipment) => void;
 }) {
   const [filter, setFilter] = useState("all");
-  const shown = actions.filter((x) =>
-    filter === "all" || filter === "critical"
-      ? filter === "all" || x.severity === "critical"
-      : x.kind === filter,
-  );
+  const completed: Action[] = data.plans
+    .filter((p) => p.status === "completed")
+    .map((p) => ({
+      id: p.id,
+      ref: p.id,
+      kind: "plan",
+      title: `${shortLocation(data.locations.find((l) => l.id === p.source_id)?.name || "Source")} → ${shortLocation(data.locations.find((l) => l.id === p.destination_id)?.name || "Destination")}`,
+      description: `${number(p.quantity)} units received`,
+      location: p.destination_id,
+      product: shortProduct(
+        data.products.find((x) => x.id === p.product_id)?.name || "Medicine",
+      ),
+      severity: "neutral",
+      label: "Completed",
+      metric: "Delivery complete",
+      progress: 4,
+      nextLabel: "View record",
+    }));
+  const shown =
+    filter === "complete"
+      ? completed
+      : actions.filter(
+          (x) =>
+            filter === "all" ||
+            (filter === "review"
+              ? x.kind === "request" || x.progress === 1
+              : filter === "dispatch"
+                ? x.progress === 2 || x.pendingDispatch
+                : filter === "receive"
+                  ? x.progress === 3 || x.pendingReceipt
+                  : filter === "critical"
+                    ? x.severity === "critical"
+                    : x.kind === filter),
+        );
   const incoming = data.shipments.filter((s) =>
     s.lines.some((x) => x.received < x.quantity),
   );
@@ -1428,22 +1462,24 @@ function ActionCentre({
       <section className="panel">
         <SectionTitle
           eyebrow="PRIORITISED WORK"
-          title="The action queue"
+          title="Your next actions"
           action={<Badge>{actions.length} open items</Badge>}
         >
-          Every risk has a next step. Every decision has a record.
+          Select an order to continue from its current step.
         </SectionTitle>
-        <div className="tabs">
+        <div className="order-lanes" aria-label="Filter orders by next step">
           {[
             ["all", "All actions"],
-            ["critical", "Critical"],
-            ["plan", "Supply plans"],
-            ["request", "Requests"],
-            ["case", "Discrepancies"],
+            ["review", "Review"],
+            ["dispatch", "Dispatch"],
+            ["receive", "Receive"],
+            ["complete", "Completed"],
+            ["case", "Exceptions"],
           ].map(([id, label]) => (
             <button
               key={id}
               className={filter === id ? "active" : ""}
+              aria-pressed={filter === id}
               onClick={() => setFilter(id)}
             >
               {label}
@@ -1467,10 +1503,10 @@ function ActionCentre({
       </section>
       <section className="panel">
         <SectionTitle
-          title="In transit, awaiting confirmation"
+          title="Deliveries awaiting receipt"
           action={<Truck size={21} />}
         >
-          Confirm accepted and damaged quantities separately.
+          Check physical quantities before confirming delivery.
         </SectionTitle>
         {incoming.length ? (
           <div className="shipment-grid">
@@ -1564,9 +1600,8 @@ function Help({ onClose }: { onClose: () => void }) {
         <div className="notice">
           <Database size={18} />
           <p>
-            This demo uses synthetic operating data and approximate town
-            locations. Forecast evidence, simulated outcomes and confirmed stock
-            movements stay distinct.
+            Use Data sources to inspect the origin of records. Use Operations
+            log to trace stock changes.
           </p>
         </div>
       </div>

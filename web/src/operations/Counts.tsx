@@ -1,3 +1,4 @@
+import { Details } from "../WorkflowProgress";
 import { useEffect, useState } from "react";
 import { ClipboardCheck, Plus } from "lucide-react";
 import { api, command } from "../api";
@@ -6,6 +7,8 @@ import type { CountPayload, Workflow } from "../../../shared/operations";
 import { Empty, Modal, SectionTitle } from "../ui";
 import { dateLabel, hasRole, number, shortLocation } from "../utils";
 import { Field, Status, useOperation } from "./common";
+import { WorkflowProgress, NextStep } from "../WorkflowProgress";
+import { countSteps, workflowStage } from "../../../shared/workflow";
 
 export function Counts({
   data,
@@ -77,7 +80,7 @@ export function Counts({
     <>
       <SectionTitle
         eyebrow="COUNT WITH CONFIDENCE"
-        title="A worklist, a recount, a reviewed result"
+        title="Stock counts"
         action={
           <button
             className="button primary"
@@ -210,10 +213,12 @@ export function Counts({
                 />
               </Field>
             </div>
-            <p className="ops-note">
-              Your account is selected initially. Assigned users must be active
-              and authorised for this location.
-            </p>
+            <Details title="How this is calculated & recorded">
+              <p className="ops-note">
+                Your account is selected initially. Assigned users must be
+                active and authorised for this location.
+              </p>
+            </Details>
             <div className="batch-checklist">
               {data.batches
                 .filter((b) => b.location_id === location)
@@ -264,7 +269,25 @@ export function Counts({
         >
           <div className="modal-body">
             {error && <div className="error-banner">{error}</div>}
+            <WorkflowProgress
+              steps={countSteps}
+              stage={workflowStage("count_session", selected.state)}
+              cancelled={selected.state === "cancelled"}
+              label="Count progress"
+            />
             <Status state={selected.state} />
+            <NextStep
+              title={
+                selected.state === "approved" ? "Count complete" : "Next step"
+              }
+              complete={selected.state === "approved"}
+            >
+              {selected.state === "counting"
+                ? "Count each assigned batch and submit the physical quantities."
+                : selected.state === "review"
+                  ? "Review variances. Approve the adjustment or request a recount."
+                  : "No further count action is required."}
+            </NextStep>
             <table className="data-table">
               <thead>
                 <tr>
@@ -368,11 +391,13 @@ export function Counts({
                   </>
                 )}
             </div>
-            <p className="ops-note">
-              No stock is changed by recording or submitting a count. Approval
-              posts a traceable adjustment only if the original balance and
-              update timestamp still match.
-            </p>
+            <Details title="How this is calculated & recorded">
+              <p className="ops-note">
+                No stock is changed by recording or submitting a count. Approval
+                posts a traceable adjustment only if the original balance and
+                update timestamp still match.
+              </p>
+            </Details>
           </div>
         </Modal>
       )}

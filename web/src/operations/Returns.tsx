@@ -6,6 +6,8 @@ import type { ReturnPayload, Workflow } from "../../../shared/operations";
 import { Empty, Modal, SectionTitle } from "../ui";
 import { hasRole, number, shortLocation, title } from "../utils";
 import { Field, Status, useOperation } from "./common";
+import { NextStep, WorkflowProgress } from "../WorkflowProgress";
+import { returnSteps, workflowStage } from "../../../shared/workflow";
 
 export function Returns({
   data,
@@ -50,7 +52,7 @@ export function Returns({
     <>
       <SectionTitle
         eyebrow="REVERSE LOGISTICS"
-        title="Returns are a journey, too"
+        title="Return transfers"
         action={
           <button
             className="button primary"
@@ -67,8 +69,7 @@ export function Returns({
           </button>
         }
       >
-        Approval reserves returned goods. Dispatch moves them into reverse
-        transit. Receipt puts them into review before disposition.
+        Approve, send back and inspect returned stock.
       </SectionTitle>
       {error && <div className="error-banner">{error}</div>}
       {!returns.length && (
@@ -90,19 +91,13 @@ export function Returns({
             <p>
               {number(w.payload.quantity)} units · {w.payload.reason}
             </p>
-            <div className="journey-steps">
-              {[
-                "requested",
-                "approved",
-                "in_transit",
-                "received_for_review",
-                "closed",
-              ].map((s) => (
-                <span key={s} className={w.state === s ? "active" : ""}>
-                  {title(s)}
-                </span>
-              ))}
-            </div>
+            <WorkflowProgress
+              steps={returnSteps}
+              stage={workflowStage("return_transfer", w.state)}
+              cancelled={w.state === "cancelled"}
+              compact
+              label="Return progress"
+            />
             <button
               className="button secondary"
               onClick={() => {
@@ -117,7 +112,7 @@ export function Returns({
       </div>
       {creating && (
         <Modal
-          title="Request a supervised return"
+          title="Request return"
           onClose={() => !busy && setCreating(false)}
           busy={busy}
         >
@@ -208,21 +203,47 @@ export function Returns({
           onClose={() => !busy && setSelected(null)}
         >
           <div className="modal-body">
+            <WorkflowProgress
+              steps={returnSteps}
+              stage={workflowStage("return_transfer", selected.state)}
+              cancelled={selected.state === "cancelled"}
+              label="Return progress"
+            />
             <Status state={selected.state} />
+            <NextStep
+              title={
+                ["closed", "cancelled"].includes(selected.state)
+                  ? "Return closed"
+                  : "Next step"
+              }
+              complete={selected.state === "closed"}
+            >
+              {selected.state === "requested"
+                ? "Review and approve the return before sending goods back."
+                : selected.state === "approved"
+                  ? "Record the return dispatch when goods leave the sending location."
+                  : selected.state === "in_transit"
+                    ? "Confirm arrival at the receiving location."
+                    : selected.state === "received_for_review"
+                      ? "Inspect the returned goods, then release or quarantine them."
+                      : "This return has no outstanding actions."}
+            </NextStep>
             <p>
               {number(selected.payload.quantity)} units ·{" "}
               {loc(selected.payload.source_id)} →{" "}
               {loc(selected.payload.destination_id)}
             </p>
             {error && <div className="error-banner">{error}</div>}
-            <Field label="Transport / receipt / disposition evidence">
-              <textarea
-                required
-                minLength={3}
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-              />
-            </Field>
+            {!["closed", "cancelled"].includes(selected.state) && (
+              <Field label="Action reference / reason">
+                <textarea
+                  required
+                  minLength={3}
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                />
+              </Field>
+            )}
             <div className="ops-card-actions">
               {(selected.state === "requested" && hasRole(data, "manager")
                 ? ["approve", "cancel"]
@@ -242,16 +263,21 @@ export function Returns({
               ).map((action) => (
                 <button
                   key={action}
-                  className="button primary"
-                  disabled={busy || reason.length < 3}
+                  className={
+                    action === "cancel" || action === "quarantine"
+                      ? "button secondary"
+                      : "button primary"
+                  }
+                  disabled={busy || reason.trim().length < 3}
                   onClick={() =>
                     run(async () => {
-                      await transition(
+                      const updated = await transition(
                         selected,
                         `/return-transfers/${selected.id}/events`,
                         { action, as_of: asOf, reason },
                       );
-                      setSelected(null);
+                      setSelected(updated);
+                      setReason("");
                     })
                   }
                 >
@@ -264,9 +290,7 @@ export function Returns({
               ))}
             </div>
             <p className="ops-note">
-              Goods in reverse transit are not available at either warehouse.
-              Receipt creates a return-pending batch; release or quarantine is a
-              separate authorised decision.
+              Returned goods remain unavailable until inspection and release.
             </p>
           </div>
         </Modal>

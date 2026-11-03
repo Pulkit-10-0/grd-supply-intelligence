@@ -215,6 +215,18 @@ it("requires a damage reason and sends only quantities from the outstanding ship
   fireEvent.change(screen.getByLabelText("Damaged units 1"), {
     target: { value: 10 },
   });
+  fireEvent.change(screen.getByLabelText("Receiver name"), {
+    target: { value: "Warehouse receiver" },
+  });
+  fireEvent.change(
+    screen.getByLabelText("Delivery document / discrepancy reference"),
+    { target: { value: "POD-001" } },
+  );
+  fireEvent.click(
+    screen.getByLabelText(
+      "I checked batch, expiry and physical quantities with the receiver.",
+    ),
+  );
   const confirm = screen.getByRole("button", { name: "Confirm receipt" });
   expect(confirm.hasAttribute("disabled")).toBe(true);
   fireEvent.change(screen.getByLabelText("Damage / discrepancy reason"), {
@@ -222,7 +234,11 @@ it("requires a damage reason and sends only quantities from the outstanding ship
   });
   fireEvent.click(confirm);
   await waitFor(() =>
-    expect(command).toHaveBeenCalledWith("/shipments/s/receipts", {
+    expect(command).toHaveBeenCalledWith("/shipments/s/proof", {
+      receiver: "Warehouse receiver",
+      reference: "POD-001",
+      confirmed: true,
+      short_lines: [],
       as_of: "2026-11-01",
       lines: [
         {
@@ -269,4 +285,93 @@ it("offers a scoped operator dispatch while withholding manager approval", () =>
       .getByRole("button", { name: "Dispatch stock" })
       .hasAttribute("disabled"),
   ).toBe(false);
+});
+
+it("keeps approval, dispatch and receiving in the same progressing plan view", async () => {
+  vi.mocked(command).mockResolvedValue({});
+  const done = vi.fn().mockResolvedValue(undefined),
+    receive = vi.fn();
+  const props = {
+    data,
+    plan,
+    asOf: "2026-11-01",
+    onClose: vi.fn(),
+    onDone: done,
+    onReceipt: receive,
+  };
+  const { rerender } = render(<PlanDialog {...props} />);
+  expect(
+    screen
+      .getByLabelText("Supply progress")
+      .querySelector('[aria-current="step"]')?.textContent,
+  ).toContain("Review");
+  fireEvent.click(screen.getByRole("button", { name: "Approve & reserve" }));
+  await waitFor(() =>
+    expect(command).toHaveBeenCalledWith("/plans/plan/approve", {
+      version: 2,
+      as_of: "2026-11-01",
+    }),
+  );
+  rerender(
+    <PlanDialog
+      {...props}
+      plan={{ ...plan, status: "approved", version: 3 }}
+    />,
+  );
+  expect(
+    screen
+      .getByLabelText("Supply progress")
+      .querySelector('[aria-current="step"]')?.textContent,
+  ).toContain("Dispatch");
+  fireEvent.change(screen.getByLabelText("Dispatch quantity"), {
+    target: { value: 15 },
+  });
+  expect(
+    screen
+      .getByRole("button", { name: "Dispatch stock" })
+      .hasAttribute("disabled"),
+  ).toBe(true);
+  fireEvent.change(screen.getByLabelText("Dispatch quantity"), {
+    target: { value: 60 },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Dispatch stock" }));
+  await waitFor(() =>
+    expect(command).toHaveBeenCalledWith("/plans/plan/dispatch", {
+      quantity: 60,
+      as_of: "2026-11-01",
+    }),
+  );
+  const shipment = {
+    id: "s",
+    plan_id: "plan",
+    source_id: "source",
+    destination_id: "dest",
+    expected_on: "2026-11-07",
+    lines: [
+      {
+        id: "line",
+        quantity: 60,
+        received: 0,
+        accepted: 0,
+        returned: 0,
+        source_batch_id: "b",
+      },
+    ],
+  } as Shipment;
+  rerender(
+    <PlanDialog
+      {...props}
+      data={{ ...data, shipments: [shipment] }}
+      plan={{ ...plan, status: "dispatched" }}
+    />,
+  );
+  expect(
+    screen
+      .getByLabelText("Supply progress")
+      .querySelector('[aria-current="step"]')?.textContent,
+  ).toContain("Receive");
+  fireEvent.click(
+    screen.getAllByRole("button", { name: /Record receipt/ }).at(-1)!,
+  );
+  expect(receive).toHaveBeenCalledWith(shipment);
 });

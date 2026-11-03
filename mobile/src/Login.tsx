@@ -50,10 +50,7 @@ export function Login() {
           >
             Better decisions.{"\n"}Within reach.
           </Text>
-          <Txt>
-            Your network, stock and next actions—connected to the same
-            operational record.
-          </Txt>
+          <Txt>Sign in to manage stock and deliveries.</Txt>
           <Card>
             <Field
               label="Email address"
@@ -101,12 +98,7 @@ export function Login() {
                   onChangeText={setOrigin}
                   placeholder="https://your-server.onrender.com"
                 />
-                <Txt small>
-                  Android emulator: http://10.0.2.2:8011. iOS simulator:
-                  http://127.0.0.1:8011. A phone needs the hosted HTTPS address
-                  or a deliberately configured local connection. The server is
-                  not hosted by Expo.
-                </Txt>
+                <Txt small>Use your organisation’s HTTPS server address.</Txt>
               </>
             )}
           </Card>
