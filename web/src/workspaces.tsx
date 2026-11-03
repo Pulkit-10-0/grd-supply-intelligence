@@ -587,7 +587,7 @@ export function ForecastWorkspace({
           </div>
           <section className="panel forecast-chart">
             <SectionTitle
-              title="Demand, with a view ahead"
+              title="Demand outlook"
               action={
                 <div className="chart-legend">
                   <span>
@@ -790,7 +790,7 @@ export function ForecastWorkspace({
         <>
           <section className="panel">
             <SectionTitle
-              title="Test a policy before acting"
+              title="Policy comparison"
               action={<Badge tone="demo">Policy simulation</Badge>}
             >
               Both policies face the same demand, delivery delays and starting
@@ -831,7 +831,7 @@ export function ForecastWorkspace({
           ) : (
             <section className="panel">
               <Empty
-                title="Make the trade-off visible"
+                title="Policy results"
                 action={
                   <button
                     className="button primary"
@@ -883,7 +883,7 @@ function SimulationResult({ job }: { job: Job }) {
   return (
     <section className="panel">
       <SectionTitle
-        title="Service improves only if the trade-off works"
+        title="Service and inventory results"
         action={<Badge tone="blue">Reproducible scenario</Badge>}
       >
         Result: lead time {String(job.payload.lead_days)} days · safety stock{" "}
@@ -976,7 +976,7 @@ export function SourceWorkspace({
       <div className="page-heading">
         <div>
           <p className="eyebrow">TRUST BEGINS WITH THE SOURCE</p>
-          <h1>Know what the data can prove.</h1>
+          <h1>Data sources</h1>
           <p>
             Keep observed records, generated scenarios and assumptions clearly
             distinct.
@@ -1184,7 +1184,7 @@ function ImportDialog({
   }
   return (
     <Modal
-      title="Import with a clear source"
+      title="Import demand data"
       busy={busy}
       eyebrow="DEMAND DATA"
       onClose={onClose}
@@ -1341,7 +1341,7 @@ export function ActivityWorkspace({ data }: { data: Data }) {
       <div className="page-heading">
         <div>
           <p className="eyebrow">FROM RECOMMENDATION TO RECEIPT</p>
-          <h1>A record of every meaningful move.</h1>
+          <h1>Operations log</h1>
           <p>Decisions, stock effects and exceptions stay connected.</p>
         </div>
         <Badge tone={data.reconciliation.ok ? "green" : "critical"}>

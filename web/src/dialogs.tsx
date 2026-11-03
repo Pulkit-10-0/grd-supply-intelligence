@@ -467,7 +467,7 @@ export function RescueDialog({
   return (
     <Modal
       busy={busy}
-      title="Give short-dated stock a useful destination"
+      title="Expiry rescue"
       eyebrow="EXPIRY RESCUE"
       onClose={onClose}
       wide
@@ -1512,7 +1512,7 @@ export function AssistantDialog({ data, asOf, onClose }: Omit<Base, "onDone">) {
   }
   return (
     <Modal
-      title="Answers with a source of truth"
+      title="Supply assistant"
       eyebrow="SUPPLY ASSISTANT"
       onClose={onClose}
     >

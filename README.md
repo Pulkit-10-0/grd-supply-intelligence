@@ -24,6 +24,8 @@ The application was developed around **NESFIC-I-09**, the medicine demand and in
 
 ![Planning Studio: saved supply comparisons, donor options and frozen scenarios](docs/images/planning-studio.png)
 
+**Interface update — 3 November 2026:** guided order progress, one receiving form, clearer next actions, expandable details and editable supplier planning assumptions. Backend, website and Android CI checks passed. See the [usability update](docs/USABILITY_UPDATE_2026-11-03.md).
+
 ## Contents
 
 1. [The selected problem statement](#1-the-selected-problem-statement)
@@ -673,7 +675,7 @@ npx expo run:android --variant release
 
 For a local Android emulator API, use `http://10.0.2.2:8011` and explicitly set `GRD_ALLOW_LOCAL_HTTP=1` before prebuild/build. A local HTTP-enabled binary is a different configuration; use HTTPS and disable cleartext traffic for hosted distribution.
 
-Generated native folders are not committed. Configure native behaviour through `app.config.js` and Expo config plugins. Android version metadata for this release is **1.2.0 / version code 3**.
+Generated native folders are not committed. Configure native behaviour through `app.config.js` and Expo config plugins. Android version metadata for this release is **1.3.0 / version code 4**.
 
 An APK can be built from source using the steps above. Locally produced demonstration APKs, signing keys and build caches are deliberately excluded from Git. The existing demonstrated build uses a debug/demo signing identity; production/store distribution needs its own signing and acceptance process.
 
@@ -877,6 +879,7 @@ Local credentials, databases, exports, backups, build caches, generated native f
 
 | Document | Purpose |
 |---|---|
+| [Interface update](docs/USABILITY_UPDATE_2026-11-03.md) | Guided workflows, reduced interface text and compatibility checks |
 | [Website read-along](docs/WEBSITE_READ_ALONG.md) | Screen-by-screen explanation for a new reader |
 | [Upgrade implementation](docs/UPGRADE_IMPLEMENTATION.md) | Delivered operational features, checks and boundaries |
 | [PRD status](docs/PRD_STATUS.md) | Current traceability and activation gates |
