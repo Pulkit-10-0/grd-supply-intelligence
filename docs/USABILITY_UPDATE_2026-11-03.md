@@ -46,6 +46,22 @@ Android retains its build-time HTTPS origin and editable server connection. The 
 - Backend: 69 SQLite tests passed; the dedicated PostgreSQL-only test was skipped locally. No backend or migration source changed.
 - Android: existing 13 offline/transport tests passed; TypeScript and Expo lint passed.
 - Local browser: created a request/plan, approved it, dispatched 30 of 60 units, then received 10 usable and 10 damaged units with a checked receiver and short-line reference. The plan correctly retained 30 unshipped and 10 in transit. These checks used an isolated local scenario, not the hosted operating database.
-- Android native release configuration: version 1.3.0 / version code 4; same package identity and hosted API origin. Native build/installation evidence is recorded separately when completed.
+- Android native release configuration: version 1.3.0 / version code 4; same package identity and hosted API origin. The release APK built successfully, contains the final client bundle, passes signature checks and disables cleartext traffic. Its signing certificate matches version 1.2.0. No physical Android device was connected for an installation check.
 
 The UI changes do not turn generated records into observed company data or establish measured business outcomes. Physical-phone field acceptance remains separate from interface and automated checks.
+
+## Published verification
+
+The updated website is live at https://grd-supply-demo.onrender.com on the existing Render Free service. The application remains connected to the same Neon database. Readiness and existing-account sign-in passed. All 30 existing batches retained the same stock fingerprint across the interface deployment, reconciliation remained valid and no calculation jobs were active during the update.
+
+The live Network, Action centre, Planning, Operations desk, Inventory, Forecasts, Stock & evidence, Operations log and Data sources workspaces were opened. Completed order history displays accepted/quarantined quantities and has no stock-changing action. The supply-plan layout was also inspected at 390-pixel width in the isolated local workspace.
+
+![Completed delivery on the published website](images/completed-delivery.jpg)
+
+Functional source checks:
+
+- [Public repository CI](https://github.com/Pulkit-10-0/grd-supply-intelligence/actions/runs/41605597856): backend, website and Android jobs passed.
+- [Deployment-source CI](https://github.com/HarshadaNayyar/GRD-medicine-supply/actions/runs/41605670162): all three jobs passed.
+- Render deployed application source `e52bfa75e3e1488cb98ed0743100898a36612c43`. Later documentation-only commits do not change the published application.
+- Android APK: `GRD-Supply-Android-1.3.0.apk`, 41,047,813 bytes, SHA-256 `71815c93f6f6ff5872c564f968caba25553d42f6ed6fc22e4e3b63debbcffc3b`.
+- APK inspection verified the hosted HTTPS origin, current workflow feature markers, identical previous signing certificate, disabled cleartext traffic and absence of the known local/cloud private settings. The package is retained locally under ignored `outputs/mobile/`; application passwords and APKs are not committed.
