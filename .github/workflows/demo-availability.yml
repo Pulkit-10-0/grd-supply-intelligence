@@ -1,0 +1,23 @@
+name: Demo availability
+on:
+  schedule:
+    - cron: "3,13,23,33,43,53 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: pharma-path-demo-availability
+  cancel-in-progress: false
+
+jobs:
+  readiness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Check the public site and database
+        run: |
+          set -euo pipefail
+          endpoint='https://grd-supply-demo.onrender.com/health/ready'
+          curl --fail --silent --show-error --connect-timeout 10 --max-time 85 "$endpoint" |
+            jq -e '.status == "ready"'
