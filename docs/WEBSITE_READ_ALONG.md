@@ -1,6 +1,6 @@
 # GRD website read-along guide
 
-Open **https://grd-supply-demo.onrender.com** beside this guide. Read one section, then try its steps. The free host may take about a minute to wake. Use the shared demo login from the [local login details](outputs/deployment-setup/demo-login.txt).
+Open the [Pharma Path website](https://pharma-path.onrender.com/) beside this guide. Read one section, then try its steps. The free host may take about a minute to wake. Use the shared demo login from the [local login details](outputs/deployment-setup/demo-login.txt).
 
 **Know this first:** the live website uses generated Assam demand, fictional operating sites and assumed stock/route rules. It does not currently use the original Kaggle dataset for its forecasts. The **Synthetic demo** badge and **1 November 2026** date describe the fixed scenario; the date is not a live clock. Saved actions change this shared demo, so your numbers may differ from earlier screenshots.
 

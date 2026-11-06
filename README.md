@@ -10,7 +10,7 @@
 
 <p align="center">
   <a href="https://github.com/Pulkit-10-0/pharma-path/actions/workflows/backend.yml"><img src="https://github.com/Pulkit-10-0/pharma-path/actions/workflows/backend.yml/badge.svg?branch=main" alt="Product checks" /></a>
-  · <a href="https://grd-supply-demo.onrender.com">Live demonstration</a>
+  · <a href="https://pharma-path.onrender.com/">Live demonstration</a>
   · <a href="https://startup.assam.gov.in/nesfic26/problem-statements/nesfic-i-09">Official challenge</a>
   · <a href="docs/WEBSITE_READ_ALONG.md">Website walkthrough</a>
   · <a href="docs/PRD_STATUS.md">Implementation status</a>
@@ -694,21 +694,21 @@ The configuration starts PostgreSQL, applies migrations and runs the API and wor
 
 ## 14. Deployment
 
-**Reference demo:** https://grd-supply-demo.onrender.com
+[Open the Pharma Path website](https://pharma-path.onrender.com/)
 
 | Component | Current demonstrated arrangement |
 |---|---|
-| Website | Compiled React assets served from the API container |
+| Website | Free Render Static Site that forwards API requests to the existing web service |
 | API | FastAPI on Render Free |
 | Calculation worker | One supervised process alongside the API |
 | Persistent database | Neon PostgreSQL |
 | Mobile | Independently installed Android client using the same HTTPS API |
 
-Free hosting can sleep. The calculation worker pauses with the service, and local container files are not durable storage. Open the demo before presenting and use the database for persistent operating records.
+The Free API can sleep. The calculation worker pauses with it, and local container files are not durable storage. Open the demo before presenting and use the database for persistent operating records.
 
 `render.yaml` and `Dockerfile` describe the deployment approach. Configure secrets in provider-private settings. Initial cloud seeding is deliberate and must be disabled afterward; never reseed or upload a local database over an existing operating environment.
 
-The reference service builds from this repository's `main` branch. The tagged evaluator commit `b987037` is deployed to the existing service and Neon database. Deploys are manual. The Android origin and existing data remain in place.
+Both Render services build from this repository's `main` branch with manual deploys. The API service uses the existing Neon database, and installed Android builds still connect directly to https://grd-supply-demo.onrender.com.
 
 The [availability workflow](.github/workflows/demo-availability.yml) checks the public readiness route every ten minutes and can be run on demand. GitHub scheduling is best-effort, so idle starts are still possible on Render Free.
 

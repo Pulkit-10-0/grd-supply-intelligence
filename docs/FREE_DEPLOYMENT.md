@@ -1,8 +1,6 @@
 # Free competition demo hosting
 
-**Publication note:** This document records the original deployment lineage. This new public repository uses `main`; the existing hosted demo still follows the original team repository. The current README and upgrade checklist supersede historical commit/version references below. Deploying this repository requires selecting its own `main` branch in the hosting provider. No provider connection or cloud secret was copied as part of publication.
-
-Deployed and verified 1 November 2026. **Live synthetic demo: https://grd-supply-demo.onrender.com**. The website and authenticated API share this HTTPS origin; API documentation is at `/docs` and readiness is at `/health/ready`.
+The [Pharma Path website](https://pharma-path.onrender.com/) is a free Render Static Site. It forwards `/api/*`, `/health/*`, `/docs` and `/openapi.json` to the existing API web service. The browser uses the branded origin for both the website and the API.
 
 The running service is Render **Free**, `grd-supply-demo`, Docker, Singapore,
 with source `Pulkit-10-0/pharma-path` on `main` and manual deploys. The
@@ -15,9 +13,9 @@ best-effort.
 
 Verified on the public service: HTTPS readiness, authenticated sign-in, website/map/action centre, stock reconciliation, forecast and simulation completion through the hosted worker, idempotent job submission, and unchanged inventory/completed jobs after a Render service restart. Evidence is in the ignored `outputs/deployment-setup` folder. Local private `demo-login.txt` contains the app login only; it is not part of the repository or Android bundle.
 
-This deployment uses one Render **Free** web service for the website, API and one supervised forecasting worker, with persistent Neon **Free** PostgreSQL. Android uses that same HTTPS origin. This keeps the existing durable SQL jobs and stock transactions. Render serves the compiled website already included in the Docker image, so Vercel is optional. The iOS native build is skipped at the user's request.
+The Render **Free** API service hosts one supervised forecasting worker and uses persistent Neon **Free** PostgreSQL. Android connects directly to https://grd-supply-demo.onrender.com, which also serves the original website. Both browser links use the same accounts, stock and forecast jobs.
 
-Render Free sleeps after 15 idle minutes, can take about a minute to wake, and discards local files on sleep/restart. Open the service before a presentation; do not use artificial keep-alive traffic. The worker pauses while the service sleeps. Interrupted running jobs may require the documented `grd recover-jobs` procedure after the 30-minute lease expires. This free setup is a demo boundary, not production availability.
+The Free API service sleeps after 15 idle minutes, can take about a minute to wake, and discards local files on sleep/restart. Open the service before a presentation; do not use artificial keep-alive traffic. The worker pauses while the service sleeps. Interrupted running jobs may require the documented `grd recover-jobs` procedure after the 30-minute lease expires. This free setup is a demo boundary, not production availability.
 
 Neon currently advertises 100 CU-hours per project per month and 1 GB storage on Free. The worker polls while Render is awake, which keeps the database active; keep demo usage within the allowance. Render Free has 750 instance-hours per workspace per month. Monitor build, bandwidth and compute allowances; select only Free plans and do not enable paid overages. Do not use Render's temporary free Postgres, which expires after 30 days.
 
@@ -30,7 +28,7 @@ Neon currently advertises 100 CU-hours per project per month and 1 GB storage on
 5. Deployment startup runs migrations, optionally seeds a new synthetic organisation, then supervises API and worker. Check `/health/ready`, sign in with the new cloud credentials, inspect the map, run a forecast through completion, and verify reconciliation. Restart once and verify stock and jobs persist in Neon before using it in the competition.
 6. Enter the Render HTTPS origin in the mobile app's Server setting. Do not add `/api/v1` to the origin. Keep tokens and login passwords out of Expo public environment variables.
 
-The current service was created using Render's public Git repository form rather than the Blueprint: Docker, original branch `codex/grd-backend`, Singapore, Free, Dockerfile `./Dockerfile`, command `python scripts/cloud_demo.py`, readiness `/health/ready`. `render.yaml` describes the equivalent setup. The Neon database was migrated/seeded once before launch, so `GRD_SEED_CLOUD_DEMO=false` was used for the first Render deployment too.
+The API service was originally created using Render's public Git repository form: Docker, original branch `codex/grd-backend`, Singapore, Free, Dockerfile `./Dockerfile`, command `python scripts/cloud_demo.py`, readiness `/health/ready`. `render.yaml` describes the equivalent setup. The Neon database was migrated/seeded once before launch, so `GRD_SEED_CLOUD_DEMO=false` was used for the first Render deployment too.
 
 ## Optional Vercel website
 

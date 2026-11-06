@@ -23,3 +23,27 @@ services:
         value: ""
       - key: GRD_WORKER_POLL_SECONDS
         value: "5"
+  - type: web
+    name: pharma-path
+    runtime: static
+    buildCommand: npm --prefix web ci && npm --prefix web run build
+    staticPublishPath: web/dist
+    autoDeployTrigger: "off"
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      - key: SKIP_INSTALL_DEPS
+        value: "true"
+    routes:
+      - type: rewrite
+        source: /api/*
+        destination: https://grd-supply-demo.onrender.com/api/*
+      - type: rewrite
+        source: /health/*
+        destination: https://grd-supply-demo.onrender.com/health/*
+      - type: rewrite
+        source: /docs
+        destination: https://grd-supply-demo.onrender.com/docs
+      - type: rewrite
+        source: /openapi.json
+        destination: https://grd-supply-demo.onrender.com/openapi.json

@@ -18,6 +18,6 @@ jobs:
       - name: Check the public site and database
         run: |
           set -euo pipefail
-          endpoint='https://grd-supply-demo.onrender.com/health/ready'
+          endpoint='https://pharma-path.onrender.com/health/ready'
           curl --fail --silent --show-error --connect-timeout 10 --max-time 85 "$endpoint" |
             jq -e '.status == "ready"'
