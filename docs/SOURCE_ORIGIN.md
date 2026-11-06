@@ -8,7 +8,7 @@ history, local databases, environment files, build caches or provider credential
 - Snapshot source branch: `codex/grd-backend`
 - Snapshot source commit: `2d30f0f0ad66785e6b36e9c4dec12379f6a79d1b`
 - Publication date: 2 November 2026
-- New repository: https://github.com/Pulkit-10-0/grd-supply-intelligence
+- New repository: https://github.com/Pulkit-10-0/pharma-path
 - Default branch: `main`
 
 The original team's notebook, root-level experiments and historical dashboard

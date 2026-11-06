@@ -50,7 +50,7 @@ def create_app(database_url=None):
         engine.dispose()
 
     app = FastAPI(
-        title="GRD Supply Intelligence",
+        title="Pharma Path",
         version="0.1.0",
         lifespan=lifespan,
         description="Shared web/React Native API. All quantities are integer product base units. /docs is interactive.",

@@ -1,24 +1,24 @@
 <p align="center">
-  <img src="web/public/favicon.svg" width="64" alt="GRD Supply Intelligence" />
+  <img src="web/public/favicon.svg" width="64" alt="Pharma Path" />
 </p>
 
-<h1 align="center">GRD Supply Intelligence</h1>
+<h1 align="center">Pharma Path</h1>
 
 <p align="center">
   Medicine demand forecasting, stock planning and accountable delivery for a connected North-East distribution network.
 </p>
 
 <p align="center">
-  <a href="https://github.com/Pulkit-10-0/grd-supply-intelligence/actions/workflows/backend.yml"><img src="https://github.com/Pulkit-10-0/grd-supply-intelligence/actions/workflows/backend.yml/badge.svg?branch=main" alt="Product checks" /></a>
+  <a href="https://github.com/Pulkit-10-0/pharma-path/actions/workflows/backend.yml"><img src="https://github.com/Pulkit-10-0/pharma-path/actions/workflows/backend.yml/badge.svg?branch=main" alt="Product checks" /></a>
   · <a href="https://grd-supply-demo.onrender.com">Live demonstration</a>
   · <a href="https://startup.assam.gov.in/nesfic26/problem-statements/nesfic-i-09">Official challenge</a>
   · <a href="docs/WEBSITE_READ_ALONG.md">Website walkthrough</a>
   · <a href="docs/PRD_STATUS.md">Implementation status</a>
 </p>
 
-**GRD Supply Intelligence connects a forecast to a stock decision, and follows that decision through approval, dispatch and receipt.** It combines a planner website, an Android field app and a shared, authenticated backend. Staff can inspect demand and inventory, compare replenishment and redistribution options, protect donor locations, manage expiry risk, record physical handoffs and explain the resulting stock balance.
+**Pharma Path connects a forecast to a stock decision, and follows that decision through approval, dispatch and receipt.** It combines a planner website, an Android field app and a shared, authenticated backend. Staff can inspect demand and inventory, compare replenishment and redistribution options, protect donor locations, manage expiry risk, record physical handoffs and explain the resulting stock balance.
 
-The application was developed around **NESFIC-I-09**, the medicine demand and inventory challenge associated with **GR Dhanuka Group / GRD Pharmaceuticals**. The “GRD” project name refers to the business named in that selected challenge.
+The application was developed around **NESFIC-I-09**, the medicine demand and inventory challenge associated with **GR Dhanuka Group / GRD Pharmaceuticals**.
 
 > **Current evidence boundary:** the operational demonstration uses generated demand, fictional sites, approximate Assam town coordinates and illustrative business rules. A separate public pharmacy benchmark uses original observed category-sales data. Neither proves real GRD forecast accuracy, commercial savings or pilot outcomes.
 
@@ -121,7 +121,7 @@ No specialised hardware is needed for the core demonstration. An Android phone c
 
 ### Product direction
 
-**GRD Supply Intelligence is a location-aware medicine demand and stock-planning platform that forecasts demand, identifies shortage and expiry exposure, compares replenishment and redistribution options, and tracks approved actions through receipt.**
+**Pharma Path is a location-aware medicine demand and stock-planning platform that forecasts demand, identifies shortage and expiry exposure, compares replenishment and redistribution options, and tracks approved actions through receipt.**
 
 It adds operational evidence around those decisions: original-data forecasting benchmarks, stock movement explanations, count sessions, delivery documents and a grounded read-only assistant.
 
@@ -556,8 +556,8 @@ The local login throttle is process-local. This correctness-oriented small-netwo
 ### A. Clone and install the backend
 
 ```sh
-git clone https://github.com/Pulkit-10-0/grd-supply-intelligence.git
-cd grd-supply-intelligence
+git clone https://github.com/Pulkit-10-0/pharma-path.git
+cd pharma-path
 
 python3.12 -m venv .venv
 source .venv/bin/activate
@@ -675,7 +675,7 @@ npx expo run:android --variant release
 
 For a local Android emulator API, use `http://10.0.2.2:8011` and explicitly set `GRD_ALLOW_LOCAL_HTTP=1` before prebuild/build. A local HTTP-enabled binary is a different configuration; use HTTPS and disable cleartext traffic for hosted distribution.
 
-Generated native folders are not committed. Configure native behaviour through `app.config.js` and Expo config plugins. Android version metadata for this release is **1.3.0 / version code 4**.
+Generated native folders are not committed. Configure native behaviour through `app.config.js` and Expo config plugins. Android version metadata for this release is **1.3.1 / version code 5**.
 
 An APK can be built from source using the steps above. Locally produced demonstration APKs, signing keys and build caches are deliberately excluded from Git. The existing demonstrated build uses a debug/demo signing identity; production/store distribution needs its own signing and acceptance process.
 

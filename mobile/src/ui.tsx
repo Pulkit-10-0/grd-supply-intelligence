@@ -289,7 +289,7 @@ export function Page({
               justifyContent: "center",
             }}
           >
-            <Text style={[s.h, { fontSize: 13, color: c.green }]}>GRD</Text>
+            <Text style={[s.h, { fontSize: 13, color: c.green }]}>PP</Text>
           </View>
         </View>
         {session.offline && (
@@ -346,7 +346,7 @@ export function Wait() {
       ]}
     >
       <ActivityIndicator color={c.ink} />
-      <Heading>GRD Supply Intelligence</Heading>
+      <Heading>Pharma Path</Heading>
     </View>
   );
 }

@@ -1,6 +1,6 @@
 # Comparable medicine supply projects and recommended improvements
 
-Reviewed 2 November 2026 for the GRD medicine-supply project. The strongest direction is to preserve our shared backend and stock ledger, then add deadline-aware planning, a stock-risk timeline grid, scan-assisted receiving and an inspectable plan-impact comparison. Several mature systems provide better references for operating workflows than a generic AI dashboard.
+Reviewed 2 November 2026 for Pharma Path. The strongest direction is to preserve our shared backend and stock ledger, then add deadline-aware planning, a stock-risk timeline grid, scan-assisted receiving and an inspectable plan-impact comparison. Several mature systems provide better references for operating workflows than a generic AI dashboard.
 
 ## Review scope
 

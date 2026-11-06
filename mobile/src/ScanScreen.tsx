@@ -43,7 +43,7 @@ export function ScanScreen() {
       <Card>
         <Heading>Verify a batch or shipment</Heading>
         <Txt>
-          Use a GRD internal label that identifies the batch record.
+          Use a Pharma Path internal label that identifies the batch record.
           Verification checks your organisation and site access against the
           server.
         </Txt>

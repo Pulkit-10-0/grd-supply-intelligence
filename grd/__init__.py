@@ -1,1 +1,1 @@
-"""GRD Supply Intelligence: shared web and mobile backend."""
+"""Pharma Path: shared web and mobile backend."""

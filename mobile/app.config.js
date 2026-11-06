@@ -1,7 +1,7 @@
 const expo = {
-  name: "GRD Supply",
-  slug: "grd-supply-mobile",
-  version: "1.3.0",
+  name: "Pharma Path",
+  slug: "pharma-path",
+  version: "1.3.1",
   orientation: "default",
   icon: "./assets/icon.png",
   userInterfaceStyle: "light",
@@ -15,7 +15,7 @@ const expo = {
     },
   },
   android: {
-    versionCode: 4,
+    versionCode: 5,
     adaptiveIcon: {
       backgroundColor: "#193C32",
       foregroundImage: "./assets/android-icon-foreground.png",
@@ -39,7 +39,7 @@ const expo = {
       "expo-camera",
       {
         cameraPermission:
-          "Allow GRD Supply to scan internal batch and shipment QR labels. Images stay on your device.",
+          "Allow Pharma Path to scan internal batch and shipment QR labels. Images stay on your device.",
         recordAudioAndroid: false,
       },
     ],

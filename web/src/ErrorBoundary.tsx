@@ -13,7 +13,7 @@ export default class ErrorBoundary extends Component<
       return (
         <div className="recovery-screen">
           <div>
-            <p className="eyebrow">GRD SUPPLY INTELLIGENCE</p>
+            <p className="eyebrow">PHARMA PATH</p>
             <h1>The workspace needs a fresh connection.</h1>
             <p>
               Reload and sign in to retrieve the confirmed server records.

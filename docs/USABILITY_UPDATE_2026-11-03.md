@@ -60,7 +60,7 @@ The live Network, Action centre, Planning, Operations desk, Inventory, Forecasts
 
 Functional source checks:
 
-- [Public repository CI](https://github.com/Pulkit-10-0/grd-supply-intelligence/actions/runs/41605597856): backend, website and Android jobs passed.
+- [Public repository CI](https://github.com/Pulkit-10-0/pharma-path/actions/runs/41605597856): backend, website and Android jobs passed.
 - [Deployment-source CI](https://github.com/HarshadaNayyar/GRD-medicine-supply/actions/runs/41605670162): all three jobs passed.
 - Render deployed application source `e52bfa75e3e1488cb98ed0743100898a36612c43`. Later documentation-only commits do not change the published application.
 - Android APK: `GRD-Supply-Android-1.3.0.apk`, 41,047,813 bytes, SHA-256 `71815c93f6f6ff5872c564f968caba25553d42f6ed6fc22e4e3b63debbcffc3b`.

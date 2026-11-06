@@ -42,9 +42,9 @@ export function Login() {
               marginBottom: 12,
             }}
           >
-            <Text style={[s.h, { color: c.green }]}>GRD</Text>
+            <Text style={[s.h, { color: c.green }]}>PP</Text>
           </View>
-          <Text style={s.label}>Supply Intelligence / mobile</Text>
+          <Text style={s.label}>Pharma Path</Text>
           <Text
             style={[s.title, { fontSize: 39, lineHeight: 48, marginBottom: 5 }]}
           >

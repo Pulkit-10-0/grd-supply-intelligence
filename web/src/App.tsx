@@ -366,7 +366,7 @@ export default function App() {
             </span>
           </div>
           <button className="user-profile" onClick={logout} title="Sign out">
-            <span className="avatar">GR</span>
+            <span className="avatar">PP</span>
             <span>
               {data.me.email}
               <small>{title(data.me.role)} · Sign out</small>
@@ -421,7 +421,7 @@ export default function App() {
               <Bell size={18} />
               {actions.length > 0 && <i />}
             </button>
-            <span className="avatar light">GR</span>
+            <span className="avatar light">PP</span>
           </div>
         </header>
         <main id="main" className="workspace" tabIndex={-1}>
@@ -881,7 +881,7 @@ export default function App() {
           )}
           <footer className="workspace-footer">
             <span>
-              GRD Supply Intelligence <i />
+              Pharma Path <i />
               Built for the North East.
             </span>
             <span>
@@ -1040,7 +1040,7 @@ function Brand() {
       </div>
       <div>
         <strong>
-          GRD<span> /</span>
+          Pharma Path
         </strong>
         <small>SUPPLY INTELLIGENCE</small>
       </div>
@@ -1113,7 +1113,7 @@ function Login({
       </div>
       <div className="login-form-wrap">
         <div className="login-form">
-          <Badge tone="green">GRD OPERATIONS WORKSPACE</Badge>
+          <Badge tone="green">PHARMA PATH WORKSPACE</Badge>
           <h2>
             Welcome to a<br />
             clearer picture.

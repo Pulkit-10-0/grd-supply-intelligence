@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "GRD Supply Intelligence",
+    "title": "Pharma Path",
     "description": "Shared web/React Native API. All quantities are integer product base units. /docs is interactive.",
     "version": "0.1.0"
   },

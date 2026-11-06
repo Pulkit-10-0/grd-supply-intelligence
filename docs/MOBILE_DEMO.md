@@ -1,4 +1,4 @@
-# GRD Supply mobile
+# Pharma Path mobile
 
 **2 November upgrade:** Android 1.2.0 / version code 3 is built for the same hosted API. It adds shipment QR/delivery proof and an Operations desk for alerts, counts, suppliers and staged returns. Authorised records persist until session expiry, and the encrypted outbox now holds 100 commands (25 KB each). See [the upgrade release checklist](UPGRADE_IMPLEMENTATION.md) for current build/device evidence. Version 1.1.0 verification below is historical. The current package is `outputs/mobile-demo/GRD-Supply-Android.apk` (also retained as `GRD-Supply-Android-1.2.0.apk`). See the upgrade checklist for native acceptance limitations.
 

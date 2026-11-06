@@ -150,7 +150,7 @@ export function batchLabel(value: string) {
     !/^[A-Za-z0-9_-]{1,100}$/.test(raw.slice(10))
   )
     throw new Error(
-      "Use a GRD internal batch QR label (GRD:BATCH:batch-id). A product barcode cannot verify a batch or expiry.",
+      "Use a Pharma Path internal batch QR label (GRD:BATCH:batch-id). A product barcode cannot verify a batch or expiry.",
     );
   return raw;
 }
@@ -167,6 +167,6 @@ export function quantity(value: string, pack = 1, allowZero = false) {
 export function internalLabel(value: string) {
   const raw = value.trim();
   if (!/^GRD:(BATCH|SHIPMENT):[A-Za-z0-9_-]{1,80}$/.test(raw))
-    throw new Error("Use a GRD internal batch or shipment QR identifier.");
+    throw new Error("Use a Pharma Path internal batch or shipment QR identifier.");
   return raw;
 }
