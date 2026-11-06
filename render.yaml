@@ -19,6 +19,8 @@ services:
         value: demo@grd.local
       - key: GRD_SEED_CLOUD_DEMO
         value: "false"
+      - key: GRD_INSTALL_PACK_SCENARIO
+        value: "true"
       - key: CORS_ORIGINS
         value: ""
       - key: GRD_WORKER_POLL_SECONDS

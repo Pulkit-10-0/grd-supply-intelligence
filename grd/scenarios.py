@@ -46,6 +46,7 @@ def freeze(s, user, org, product_id, as_of, horizon, network):
                             "quantity": line.quantity - line.received,
                             "expiry": str(b.expiry),
                             "eligible": b.status == "usable",
+                            "kind": "shipment",
                         }
                     )
         for plan in s.scalars(
@@ -158,7 +159,7 @@ def project(snapshot, legs=(), shock=None):
         known = row["balance"]["known"] and row["daily_rate"] is not None
         for n in range(1, base["horizon"] + 1):
             day = as_of + timedelta(days=n)
-            expired, arrived = 0.0, 0.0
+            expired, arrived, arrived_from_shipments = 0.0, 0.0, 0.0
             for incoming in row["incoming"]:
                 arrival = date.fromisoformat(incoming["date"]) + timedelta(
                     days=delay if active(row["location_id"]) else 0
@@ -167,6 +168,8 @@ def project(snapshot, legs=(), shock=None):
                     qty = incoming["quantity"] * (supply if active(row["location_id"]) else 1)
                     stock.append({"id": incoming["id"], "quantity": qty, "expiry": incoming["expiry"]})
                     arrived += qty
+                    if incoming.get("kind") == "shipment":
+                        arrived_from_shipments += qty
             for b in stock:
                 if b["expiry"] <= str(day):
                     expired += b["quantity"]
@@ -196,6 +199,7 @@ def project(snapshot, legs=(), shock=None):
                     "balance": round(sum(b["quantity"] for b in stock), 2) if known else None,
                     "unserved": round(need, 2) if known else None,
                     "receipts": round(arrived, 2),
+                    "in_transit_receipts": round(arrived_from_shipments, 2),
                     "expiry": round(expired, 2),
                     "demand": round(max(rate, booked), 2),
                     "status": "unknown" if not known else "shortage" if need > 1e-8 else "covered",
@@ -223,6 +227,40 @@ def project(snapshot, legs=(), shock=None):
         "unsupported_locations": sum(r["service_gap_units"] is None for r in rows),
         "shock": shock,
         "note": "Deterministic planning estimate, not measured outcomes. Requests and forecast are alternatives, not added. Gaps are unit-days: an unfilled booked unit carried to another day contributes again; this is not a count of unique lost sales.",
+    }
+
+
+def suggested_top_up(snapshot, site, row, pack_size):
+    """Smallest whole-pack receipt by the first shortage that covers this horizon."""
+    if not row["shortage_date"]:
+        return None
+    until = date.fromisoformat(snapshot["as_of"]) + timedelta(days=snapshot["horizon"])
+    inbound = {
+        "id": "quantity-estimate",
+        "date": row["shortage_date"],
+        "expiry": str(until + timedelta(days=1)),
+        "quantity": 0,
+        "eligible": True,
+    }
+    estimate = {**snapshot, "locations": [{**site, "incoming": [*site["incoming"], inbound]}]}
+    # Total projected demand is an upper bound even when it includes carried orders.
+    lo, hi = 1, max(1, math.ceil(sum(day["demand"] for day in row["timeline"]) / pack_size))
+    while lo < hi:
+        mid = (lo + hi) // 2
+        inbound["quantity"] = mid * pack_size
+        if project(estimate)["rows"][0]["shortage_date"]:
+            lo = mid + 1
+        else:
+            hi = mid
+    quantity = lo * pack_size
+    inbound["quantity"] = quantity
+    if quantity > 100_000_000 or project(estimate)["rows"][0]["shortage_date"]:
+        return None
+    return {
+        "quantity": quantity,
+        "needed_by": row["shortage_date"],
+        "cover_through": str(until),
+        "pack_size": pack_size,
     }
 
 

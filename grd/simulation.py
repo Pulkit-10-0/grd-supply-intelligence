@@ -2,6 +2,9 @@
 
 import numpy as np
 
+BASELINE_SAFETY_DAYS = 2
+FRONTIER_SAFETY_DAYS = (0, 1, 2, 3, 5, 7, 10)
+
 
 def compare(mean, seed=42, days=90, lead_days=5, proposed_safety_days=10):
     rng = np.random.default_rng(seed)
@@ -53,12 +56,29 @@ def compare(mean, seed=42, days=90, lead_days=5, proposed_safety_days=10):
             "conservation_ok": True,
         }
 
-    baseline, proposed = replay(2), replay(proposed_safety_days)
+    results = {
+        safety: replay(safety)
+        for safety in sorted(set(FRONTIER_SAFETY_DAYS) | {proposed_safety_days})
+    }
+    baseline, proposed = results[BASELINE_SAFETY_DAYS], results[proposed_safety_days]
+    # Preserve service, shortage frequency and expiry outcomes when comparing stock.
+    comparable = [
+        safety for safety, metrics in results.items()
+        if metrics["unmet_units"] <= baseline["unmet_units"]
+        and metrics["shortage_days"] <= baseline["shortage_days"]
+        and metrics["expired_units"] <= baseline["expired_units"]
+        and metrics["average_inventory_units"] < baseline["average_inventory_units"]
+    ]
+    lower_inventory = min(comparable, key=lambda safety: results[safety]["average_inventory_units"]) if comparable else None
     return {
         "evidence_type": "synthetic_policy_simulation",
         "measured_grd_impact": False,
         "baseline": baseline,
         "proposed": proposed,
+        "safety_stock_options": [
+            {"safety_days": safety, **metrics} for safety, metrics in results.items()
+        ],
+        "lower_inventory_at_baseline_service_days": lower_inventory,
         "change": {
             k: {
                 "absolute": proposed[k] - baseline[k],
@@ -71,13 +91,13 @@ def compare(mean, seed=42, days=90, lead_days=5, proposed_safety_days=10):
             "days": days,
             "mean_daily_demand": mean,
             "lead_days": lead_days,
-            "baseline_safety_days": 2,
+            "baseline_safety_days": BASELINE_SAFETY_DAYS,
             "proposed_safety_days": proposed_safety_days,
         },
         "assumptions": [
-            "Same demand, calendar-indexed delays, arrival shelf life and opening stock for both policies",
-            "Single lane with unbounded external supply; this does not validate multi-site transfer feasibility",
-            "No measured transport costs; cost savings not claimed",
+            "Every policy uses the same demand, delays, arrival shelf life and opening stock",
+            "Synthetic single-lane results assume unbounded external supply",
+            "Real excess-stock reduction and costs require a distributor pilot",
         ],
         "service_change_percentage_points": proposed["fill_rate_pct"] - baseline["fill_rate_pct"]
         if demand.sum()

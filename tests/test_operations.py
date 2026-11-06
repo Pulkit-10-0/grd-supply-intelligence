@@ -367,6 +367,14 @@ def test_public_benchmark_worker_retains_source_identity(env, monkeypatch):
     assert result["daily_rows"] == 2106
     assert set(result["test_metrics_by_horizon"]) == {"1", "2", "4"}
     assert not result["source"]["operational_use"]
+    summary = ok(env.client.get("/api/v1/benchmarks/summary", headers=env.headers))
+    assert len(summary["categories"]) == 8
+    assert summary["windows"]["test"]["origins"] == 52
+    for h, methods in summary["categories"]["N02BE"]["test"].items():
+        for method, saved in methods.items():
+            live = result["test_metrics_by_horizon"][h][method]
+            assert live["observations"] == saved["observations"] == 52
+            assert abs(live["wape_pct"] - saved["wape_pct"]) < 0.15
 
 
 def test_comparison_snapshot_and_team_are_scoped(env):

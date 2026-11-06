@@ -976,6 +976,24 @@ strong {
   height: 5px;
   border-radius: 50%;
 }
+.map-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 6px 12px;
+  padding: 7px 12px;
+  background: #f6f8f2;
+}
+.map-meta .map-legend,
+.map-meta .map-footnote {
+  position: static;
+  z-index: auto;
+  flex-wrap: wrap;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
 .map-footnote {
   position: absolute;
   left: 19px;
@@ -4937,6 +4955,13 @@ strong {
 .risk-cell.shortage {
   background: #fae5db;
   color: #a3412c;
+}
+.risk-arrival {
+  display: block;
+  color: #235b7f;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1.1;
 }
 .risk-cell.unknown {
   background: #eee;

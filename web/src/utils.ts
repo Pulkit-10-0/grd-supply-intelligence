@@ -1,4 +1,17 @@
 export * from "../../shared/utils";
+export function forecastMethod(name: string) {
+  return (
+    (
+      {
+        naive: "Last week",
+        recent4: "Four-week mean",
+        croston: "Croston",
+        seasonal: "Same week last year",
+        ml: "Gradient boosting",
+      } as Record<string, string>
+    )[name] || name
+  );
+}
 export function exportCsv(filename: string, rows: Record<string, unknown>[]) {
   if (!rows.length) return;
   const keys = Object.keys(rows[0]);

@@ -365,6 +365,12 @@ def install_operations(app, context):
 
         return source()
 
+    @app.get("/api/v1/benchmarks/summary", tags=["evidence"])
+    def benchmark_summary(ctx=Depends(context)):
+        from .benchmark import summary
+
+        return summary()
+
     @app.post("/api/v1/benchmarks/run", tags=["evidence"])
     def benchmark(
         category: str = Query(pattern="^(M01AB|M01AE|N02BA|N02BE|N05B|N05C|R03|R06)$"),

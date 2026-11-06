@@ -1,7 +1,7 @@
 const expo = {
   name: "Pharma Path",
   slug: "pharma-path",
-  version: "1.3.1",
+  version: "1.3.2",
   orientation: "default",
   icon: "./assets/icon.png",
   userInterfaceStyle: "light",
@@ -15,7 +15,7 @@ const expo = {
     },
   },
   android: {
-    versionCode: 5,
+    versionCode: 6,
     adaptiveIcon: {
       backgroundColor: "#193C32",
       foregroundImage: "./assets/android-icon-foreground.png",

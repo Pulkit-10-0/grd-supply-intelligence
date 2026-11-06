@@ -2,6 +2,8 @@
 
 Open the [Pharma Path website](https://pharma-path.onrender.com/) beside this guide. Read one section, then try its steps. The free host may take about a minute to wake. Use the shared demo login from the [local login details](outputs/deployment-setup/demo-login.txt).
 
+For the on-time rehearsal, choose **Paracetamol 500 mg · 10-tablet strips**, select **Silchar**, and keep the horizon at 21 days. With the seeded forecast and untouched opening stock, Silchar has 2,200 strips, with a shortage on 15 November. **Find supply** suggests 1,240 strips (62 cartons) by the shortage date. The Guwahati route arrives 7 November. Use **Planning** to compare the suggested transfer against no action, then follow approval, dispatch and receipt in the Action centre. The grid marks expected arrivals with a plus quantity. The earlier tablet case below is a late-delivery stress example.
+
 **Know this first:** the live website uses generated Assam demand, fictional operating sites and assumed stock/route rules. It does not currently use the original Kaggle dataset for its forecasts. The **Synthetic demo** badge and **1 November 2026** date describe the fixed scenario; the date is not a live clock. Saved actions change this shared demo, so your numbers may differ from earlier screenshots.
 
 ## 1. What problem are we solving?
@@ -81,18 +83,18 @@ Inspect the demand history, forecast and uncertainty band. Change the **Evaluati
 
 | Label | How to read it |
 |---|---|
-| Selected method | The method chosen using validation results; a simple baseline may win. |
+| Operating method | The method chosen on validation. Gradient boosting must beat the strongest simple baseline on those windows. |
 | Test error · WAPE | Forecast error on held-out history; lower is better. It is not “accuracy percent.” |
-| Error reduction vs baseline | Improvement relative to the recent-four-week method; it can be negative. |
+| Last-week baseline | Test error for repeating the last observed week, on the same held-out dates. |
 | Interval coverage | How often held-out outcomes fell inside the estimated range. |
 
 The band is not a guarantee. Insufficient/stale history is reported explicitly. These live results use **synthetic demand**, so they do not establish real GRD forecast accuracy.
 
 ### Policy comparison
 
-Switch to **Policy comparison**, adjust delivery lead time/safety stock and click **Run policy comparison**.
+Switch to **Policy comparison**, set delivery lead time and click **Run policy comparison**. The frontier compares 0, 1, 2, 3, 5, 7 and 10 days of safety stock with shared inputs.
 
-Compare service, unmet demand, shortage days, expiry and average inventory together. Better service may require more stock. This is a paired **synthetic single-lane experiment**, not a measured GRD saving or a full-network optimisation.
+Compare service, unmet demand, shortage days, expiry and average inventory together. In the seeded strip example, two days of buffer is the lowest tested setting with 100% fill. The excess-stock target is measured against an agreed definition and baseline in the proposed pilot.
 
 ## 8. Operations log — what happened?
 

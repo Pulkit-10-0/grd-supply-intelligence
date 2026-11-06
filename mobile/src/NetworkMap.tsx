@@ -70,22 +70,15 @@ export function NetworkMap({ large = false }: { large?: boolean }) {
           <Path
             key={b.name}
             d={b.path}
-            fill={b.name === "Assam" ? "#D2DEBC" : "#EDF1E6"}
+            fill="#D8E4CE"
             stroke="#B4C3A5"
             strokeWidth={0.8}
+            fillRule="evenodd"
           />
         ))}
         <SvgText x="210" y="182" fontSize="12" letterSpacing="3" fill="#718367">
           ASSAM
         </SvgText>
-        <SvgText x="220" y="288" fontSize="9" fill="#87977A">
-          MIZORAM
-        </SvgText>
-        {!zoom && (
-          <SvgText x="303" y="80" fontSize="10" fill="#87977A">
-            ARUNACHAL PRADESH
-          </SvgText>
-        )}
         {data.routes
           .filter((r) => r.permitted)
           .slice(0, 30)
@@ -166,7 +159,7 @@ export function NetworkMap({ large = false }: { large?: boolean }) {
         <Txt small>
           Illustrative links · Approximate town locations, no live GPS.
           {large
-            ? "\nBoundaries: geoBoundaries / DataMeet / ECI · 2011 · CC BY 2.5 IN"
+            ? "\nOutline: Survey of India · generalised at 1:16 million"
             : ""}
         </Txt>
       </View>

@@ -7,7 +7,11 @@ import numpy as np
 import pandas as pd
 from sklearn.ensemble import HistGradientBoostingRegressor
 
-VERSION = "weekly-recursive-v1"
+VERSION = "weekly-rolling-v2"
+MIN_TRAIN = 12
+MIN_SELECTION = 12
+MIN_CALIBRATION = 12
+NOMINAL_COVERAGE = 0.9
 
 
 def features(hist, week):
@@ -78,6 +82,69 @@ def metric(actual, predicted):
     }
 
 
+def evaluation_windows(n, max_h):
+    # Keep all target dates disjoint, including the longest horizon.
+    separation = 3 * (max_h - 1)
+    if n >= 65 + 24 + 24 + 52 + separation:
+        selection, calibration, test = 24, 24, 52
+    else:
+        test = 26
+        available = n - test - separation
+        train = next(
+            (m for m in (65, 52, MIN_TRAIN) if available >= m + MIN_SELECTION + MIN_CALIBRATION),
+            None,
+        )
+        if train is None:
+            return {}
+        selection = calibration = min(24, (available - train) // 2)
+    windows = {}
+    last = n - max_h
+    for name, count in (("test", test), ("calibration", calibration), ("validation", selection)):
+        first = last - count + 1
+        windows[name] = range(first, last + 1)
+        last = first - max_h
+    return windows
+
+
+def evaluate(values, ends, horizons, windows):
+    methods = ["naive", "recent4", "croston"]
+    first = windows["validation"].start
+    if first >= 52:
+        methods.append("seasonal")
+    if first >= 65 and values[:first].sum() > 0:
+        methods.append("ml")
+    max_h = max(horizons)
+    offsets = np.array(horizons) - 1
+
+    def replay(origins, method):
+        actual = values[np.array(origins)[:, None] + offsets]
+        predicted = np.array([
+            predict(values[:origin], ends[:origin], max_h, method) for origin in origins
+        ])[:, offsets]
+        return actual, predicted
+
+    validation, validation_mae, widths, tests = {}, {}, {}, {str(h): {} for h in horizons}
+    for method in methods:
+        a, p = replay(windows["validation"], method)
+        validation_mae[method] = metric(a.ravel(), p.ravel())["mae"]
+        validation[method] = {str(h): metric(a[:, i], p[:, i]) for i, h in enumerate(horizons)}
+        a, p = replay(windows["calibration"], method)
+        # Finite-sample order statistic from a separate calibration window.
+        rank = math.ceil((len(a) + 1) * NOMINAL_COVERAGE)
+        widths[method] = np.sort(np.abs(a - p), axis=0)[rank - 1]
+        a, p = replay(windows["test"], method)
+        for i, h in enumerate(horizons):
+            width = float(widths[method][i])
+            tests[str(h)][method] = {
+                **metric(a[:, i], p[:, i]),
+                "interval_coverage": float(np.mean(np.abs(a[:, i] - p[:, i]) <= width)),
+                "interval_half_width": width,
+            }
+    baseline = min((m for m in methods if m != "ml"), key=validation_mae.get)
+    selected = "ml" if validation_mae.get("ml", math.inf) < validation_mae[baseline] else baseline
+    return selected, baseline, validation, validation_mae, widths[selected], tests
+
+
 def forecast(observations, as_of, horizons=(1, 2, 4)):
     if not observations:
         return {"status": "insufficient_history", "reason": "No observations; missing is not zero"}
@@ -112,88 +179,61 @@ def forecast(observations, as_of, horizons=(1, 2, 4)):
     values = weekly.quantity.to_numpy(dtype=float)
     horizons = sorted(set(horizons))
     max_h = max(horizons)
-    methods = ["naive", "recent4", "croston"]
-    if len(values) >= 90:
-        methods += ["seasonal"]
-        if values.sum() > 0:
-            methods += ["ml"]
-    # Final test targets start strictly after every validation target ends.
-    test_first = len(values) - max_h - 3
-    val_last = test_first - max_h
-    val_origins = list(range(max(8, val_last - 3), val_last + 1))
-    test_origins = list(range(test_first, len(values) - max_h + 1))
-    if "ml" in methods and (not val_origins or min(val_origins) < 65):
-        methods.remove("ml")
-    if "seasonal" in methods and (not val_origins or min(val_origins) < 52):
-        methods.remove("seasonal")
-    evaluation = len(val_origins) >= 4 and test_first >= 12
-
-    def evaluate(method, origins):
-        result = {h: {"actual": [], "predicted": [], "errors": []} for h in horizons}
-        for origin in origins:
-            predictions = predict(values[:origin], ends[:origin], max_h, method)
-            for h in horizons:
-                actual, pred = float(values[origin + h - 1]), predictions[h - 1]
-                result[h]["actual"].append(actual)
-                result[h]["predicted"].append(pred)
-                result[h]["errors"].append(abs(actual - pred))
-        return result
-
-    validations = {m: evaluate(m, val_origins) for m in methods} if evaluation else {}
-
-    def score(m):
-        a = sum((v["actual"] for v in validations[m].values()), [])
-        p = sum((v["predicted"] for v in validations[m].values()), [])
-        return metric(a, p)["mae"]
-
-    selected = min(methods, key=score) if evaluation else "recent4"
-    tests = {m: evaluate(m, test_origins) for m in methods} if evaluation else {}
+    windows = evaluation_windows(len(values), max_h)
+    # Evaluate intervening weeks too, so the operational chart has a continuous range.
+    all_horizons = tuple(range(1, max_h + 1))
+    selected, baseline, validations, validation_mae, widths, tests = (
+        evaluate(values, ends, all_horizons, windows)
+        if windows
+        else ("recent4", "recent4", {}, {}, [None] * max_h, {})
+    )
     future = predict(values, ends, max_h, selected)
-    output, results = [], {}
-    for h in horizons:
-        q = None
-        if evaluation:
-            errors = validations[selected][h]["errors"]
-            quantile = min(1.0, math.ceil((len(errors) + 1) * 0.9) / len(errors))
-            q = float(np.quantile(errors, quantile, method="higher"))
-        pred = future[h - 1]
-        output.append(
-            {
-                "weeks_ahead": h,
-                "week_ending": str(ends[-1] + timedelta(weeks=h)),
-                "quantity": round(pred, 3),
-                "lower": max(0.0, pred - q) if q is not None else None,
-                "upper": pred + q if q is not None else None,
-            }
-        )
-        if evaluation:
-            results[str(h)] = {m: metric(t[h]["actual"], t[h]["predicted"]) for m, t in tests.items()}
-            results[str(h)][selected]["interval_coverage"] = float(
-                np.mean(np.asarray(tests[selected][h]["errors"]) <= q)
-            )
+    operational = [
+        {
+            "weeks_ahead": h,
+            "week_ending": str(ends[-1] + timedelta(weeks=h)),
+            "quantity": round(pred, 3),
+            "lower": min(round(pred, 3), max(0.0, float(pred - width))) if width is not None else None,
+            "upper": max(round(pred, 3), float(pred + width)) if width is not None else None,
+        }
+        for h, (pred, width) in enumerate(zip(future, widths), 1)
+    ]
+    evidence = {
+        name: {
+            "origins": len(origins),
+            "first_target_week_ending": str(ends[origins.start]),
+            "last_target_week_ending": str(ends[origins.stop + max_h - 2]),
+        }
+        for name, origins in windows.items()
+    }
     return {
         "status": "ready",
         "model_version": VERSION,
         "selected_model": selected,
-        "selection": "validation MAE; final test not used for selection"
-        if evaluation
-        else "short-history recent4 fallback",
+        "selection": (
+            "Lowest validation MAE. ML must beat the strongest baseline on validation."
+            if windows else "Short-history recent4 fallback. At least 26 test origins are required."
+        ),
+        "validation_baseline": baseline,
         "as_of": str(as_of),
         "last_complete_week": str(ends[-1]),
         "complete_weeks": len(values),
-        "forecast": output,
-        "operational_forecast": [
-            {"weeks_ahead": h, "week_ending": str(ends[-1] + timedelta(weeks=h)), "quantity": round(value, 3)}
-            for h, value in enumerate(future, 1)
+        "history": [
+            {"date": str(end), "actual": float(value)}
+            for end, value in zip(ends[-14:], values[-14:])
         ],
-        "test_metrics_by_horizon": results,
+        "forecast": [operational[h - 1] for h in horizons],
+        "operational_forecast": operational,
+        "test_metrics_by_horizon": {str(h): tests[str(h)] for h in horizons} if windows else {},
         "validation_metrics": {
-            m: {str(h): metric(x["actual"], x["predicted"]) for h, x in v.items()}
+            m: {str(h): v[str(h)] for h in horizons}
             for m, v in validations.items()
         },
-        "validation_last_target": str(ends[max(val_origins) + max_h - 1]) if evaluation else None,
-        "test_first_target": str(ends[test_first]) if evaluation else None,
-        "interval_note": "90% nominal empirical residual interval; small overlapping calibration sample, inspect test coverage; no guarantee",
+        "validation_mae": validation_mae,
+        "evaluation_windows": evidence,
+        "validation_last_target": evidence.get("validation", {}).get("last_target_week_ending"),
+        "test_first_target": evidence.get("test", {}).get("first_target_week_ending"),
+        "interval_note": "90% nominal range fitted on separate rolling calibration windows. Use held-out coverage to check it.",
         "seasonal_signal_comparison": "Seasonal baseline compared where history permits; local weather/outbreak signals unavailable, not claimed",
         "units": "product base units per week",
         "seed": 42,

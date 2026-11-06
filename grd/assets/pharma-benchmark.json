@@ -1,0 +1,1143 @@
+{
+  "evidence_type": "observed_public_pharmacy_categories",
+  "algorithm": "weekly-rolling-v2",
+  "runtime": {
+    "numpy": "2.3.5",
+    "pandas": "2.2.3",
+    "scikit-learn": "1.9.1"
+  },
+  "nominal_interval_coverage_pct": 90.0,
+  "categories": {
+    "M01AB": {
+      "selected": "croston",
+      "validation_baseline": "croston",
+      "validation_mae": {
+        "naive": 9.410937500000001,
+        "recent4": 6.977443440755209,
+        "croston": 5.950049557519919,
+        "seasonal": 9.540156250041667,
+        "ml": 6.963992042782323
+      },
+      "test": {
+        "1": {
+          "naive": {
+            "wape_pct": 19.521127931260196,
+            "bias_pct": 0.24156597088740903,
+            "mae": 7.226346153846153,
+            "observations": 52,
+            "interval_coverage": 0.9615384615384616,
+            "interval_half_width": 24.810000000000002
+          },
+          "recent4": {
+            "wape_pct": 16.082838945629472,
+            "bias_pct": -0.16753768948642084,
+            "mae": 5.953557692307691,
+            "observations": 52,
+            "interval_coverage": 0.8846153846153846,
+            "interval_half_width": 14.170000000000002
+          },
+          "croston": {
+            "wape_pct": 15.561912342426059,
+            "bias_pct": -7.210665856630286,
+            "mae": 5.76072068162108,
+            "observations": 52,
+            "interval_coverage": 0.9807692307692307,
+            "interval_half_width": 18.611869592068665
+          },
+          "seasonal": {
+            "wape_pct": 21.659376396147415,
+            "bias_pct": -8.039211611790487,
+            "mae": 8.017884615384615,
+            "observations": 52,
+            "interval_coverage": 0.9807692307692307,
+            "interval_half_width": 18.160000000000004
+          },
+          "ml": {
+            "wape_pct": 16.553672604607403,
+            "bias_pct": -1.5692347258371588,
+            "mae": 6.127851258367879,
+            "observations": 52,
+            "interval_coverage": 0.9807692307692307,
+            "interval_half_width": 20.000468339767576
+          }
+        },
+        "2": {
+          "naive": {
+            "wape_pct": 20.15073977012443,
+            "bias_pct": -0.4565526918553017,
+            "mae": 7.51173076923077,
+            "observations": 52,
+            "interval_coverage": 0.9615384615384616,
+            "interval_half_width": 21.480000000000004
+          },
+          "recent4": {
+            "wape_pct": 17.021419285611117,
+            "bias_pct": -0.7613725469965287,
+            "mae": 6.345192307692309,
+            "observations": 52,
+            "interval_coverage": 0.8653846153846154,
+            "interval_half_width": 13.881250000000001
+          },
+          "croston": {
+            "wape_pct": 16.284964681926127,
+            "bias_pct": -8.317600048694597,
+            "mae": 6.070659026544784,
+            "observations": 52,
+            "interval_coverage": 0.9807692307692307,
+            "interval_half_width": 18.361984715675916
+          },
+          "seasonal": {
+            "wape_pct": 21.862425455520935,
+            "bias_pct": -9.022203421307838,
+            "mae": 8.149807692307693,
+            "observations": 52,
+            "interval_coverage": 0.9807692307692307,
+            "interval_half_width": 18.639999999999997
+          },
+          "ml": {
+            "wape_pct": 16.97257560512829,
+            "bias_pct": -3.673839964891575,
+            "mae": 6.32698451077017,
+            "observations": 52,
+            "interval_coverage": 0.9807692307692307,
+            "interval_half_width": 20.796701281530922
+          }
+        },
+        "4": {
+          "naive": {
+            "wape_pct": 22.965443797941138,
+            "bias_pct": -0.7305315903466962,
+            "mae": 8.584615384615386,
+            "observations": 52,
+            "interval_coverage": 0.9615384615384616,
+            "interval_half_width": 20.67
+          },
+          "recent4": {
+            "wape_pct": 19.069844704160435,
+            "bias_pct": -0.9731913877013487,
+            "mae": 7.128417968750001,
+            "observations": 52,
+            "interval_coverage": 0.8846153846153846,
+            "interval_half_width": 14.692734375
+          },
+          "croston": {
+            "wape_pct": 16.69024721253848,
+            "bias_pct": -9.48195737771242,
+            "mae": 6.2389106979346485,
+            "observations": 52,
+            "interval_coverage": 0.9807692307692307,
+            "interval_half_width": 19.707221242217805
+          },
+          "seasonal": {
+            "wape_pct": 21.426697328415106,
+            "bias_pct": -8.550820819121409,
+            "mae": 8.009423076923078,
+            "observations": 52,
+            "interval_coverage": 0.9807692307692307,
+            "interval_half_width": 18.639999999999997
+          },
+          "ml": {
+            "wape_pct": 17.256206271188727,
+            "bias_pct": -3.35276207857963,
+            "mae": 6.450469459206525,
+            "observations": 52,
+            "interval_coverage": 0.9615384615384616,
+            "interval_half_width": 19.245932717620555
+          }
+        }
+      }
+    },
+    "M01AE": {
+      "selected": "croston",
+      "validation_baseline": "croston",
+      "validation_mae": {
+        "naive": 7.130708333333334,
+        "recent4": 6.296878621419271,
+        "croston": 5.971570766497483,
+        "seasonal": 7.469461805541666,
+        "ml": 6.108817452734647
+      },
+      "test": {
+        "1": {
+          "naive": {
+            "wape_pct": 25.328277131175764,
+            "bias_pct": -0.711399722625552,
+            "mae": 6.887211538461537,
+            "observations": 52,
+            "interval_coverage": 0.7115384615384616,
+            "interval_half_width": 9.920000000000002
+          },
+          "recent4": {
+            "wape_pct": 27.878926966780835,
+            "bias_pct": -0.9631725641154492,
+            "mae": 7.580778846153847,
+            "observations": 52,
+            "interval_coverage": 0.6538461538461539,
+            "interval_half_width": 8.761500000000005
+          },
+          "croston": {
+            "wape_pct": 26.751159991914175,
+            "bias_pct": -4.103373873667767,
+            "mae": 7.274118836009013,
+            "observations": 52,
+            "interval_coverage": 0.7307692307692307,
+            "interval_half_width": 8.337144798245582
+          },
+          "seasonal": {
+            "wape_pct": 27.641758364551514,
+            "bias_pct": -4.139470838552108,
+            "mae": 7.516288461538462,
+            "observations": 52,
+            "interval_coverage": 0.6923076923076923,
+            "interval_half_width": 9.381
+          },
+          "ml": {
+            "wape_pct": 24.80949020618258,
+            "bias_pct": 0.9198169266003213,
+            "mae": 6.746144095251271,
+            "observations": 52,
+            "interval_coverage": 0.75,
+            "interval_half_width": 8.280878040079536
+          }
+        },
+        "2": {
+          "naive": {
+            "wape_pct": 30.92923948057928,
+            "bias_pct": -0.23230809354575813,
+            "mae": 8.369826923076921,
+            "observations": 52,
+            "interval_coverage": 0.7692307692307693,
+            "interval_half_width": 12.573
+          },
+          "recent4": {
+            "wape_pct": 30.58438383635959,
+            "bias_pct": -0.5004501902026934,
+            "mae": 8.276504807692307,
+            "observations": 52,
+            "interval_coverage": 0.7115384615384616,
+            "interval_half_width": 9.359562499999996
+          },
+          "croston": {
+            "wape_pct": 27.52371640518527,
+            "bias_pct": -4.122446097586643,
+            "mae": 7.448251119653427,
+            "observations": 52,
+            "interval_coverage": 0.7307692307692307,
+            "interval_half_width": 8.601673332504838
+          },
+          "seasonal": {
+            "wape_pct": 28.13706532839013,
+            "bias_pct": -3.5563249413900198,
+            "mae": 7.614230769230771,
+            "observations": 52,
+            "interval_coverage": 0.7115384615384616,
+            "interval_half_width": 9.881999999999998
+          },
+          "ml": {
+            "wape_pct": 25.96501432816762,
+            "bias_pct": -0.44279914636308004,
+            "mae": 7.026447453337288,
+            "observations": 52,
+            "interval_coverage": 0.7884615384615384,
+            "interval_half_width": 9.035418469001765
+          }
+        },
+        "4": {
+          "naive": {
+            "wape_pct": 39.274935086633626,
+            "bias_pct": 0.6713988946980108,
+            "mae": 10.532865384615386,
+            "observations": 52,
+            "interval_coverage": 0.7115384615384616,
+            "interval_half_width": 12.374000000000002
+          },
+          "recent4": {
+            "wape_pct": 35.01854494744187,
+            "bias_pct": 0.47908229064406865,
+            "mae": 9.391374399038462,
+            "observations": 52,
+            "interval_coverage": 0.6153846153846154,
+            "interval_half_width": 9.098648437500003
+          },
+          "croston": {
+            "wape_pct": 28.31837350920144,
+            "bias_pct": -4.2190180026923025,
+            "mae": 7.5945030953135335,
+            "observations": 52,
+            "interval_coverage": 0.6153846153846154,
+            "interval_half_width": 7.779593270864172
+          },
+          "seasonal": {
+            "wape_pct": 28.118584404586144,
+            "bias_pct": -1.379798946040727,
+            "mae": 7.540923076923079,
+            "observations": 52,
+            "interval_coverage": 0.7692307692307693,
+            "interval_half_width": 11.838000000000001
+          },
+          "ml": {
+            "wape_pct": 28.07845924865623,
+            "bias_pct": 4.359135510460936,
+            "mae": 7.530162196860152,
+            "observations": 52,
+            "interval_coverage": 0.6538461538461539,
+            "interval_half_width": 8.373807877272323
+          }
+        }
+      }
+    },
+    "N02BA": {
+      "selected": "recent4",
+      "validation_baseline": "recent4",
+      "validation_mae": {
+        "naive": 5.898958333333333,
+        "recent4": 4.896492513020832,
+        "croston": 5.517026975286211,
+        "seasonal": 11.327083333375,
+        "ml": 5.777168619519728
+      },
+      "test": {
+        "1": {
+          "naive": {
+            "wape_pct": 25.191970901252855,
+            "bias_pct": -0.03592437918183043,
+            "mae": 5.394230769230768,
+            "observations": 52,
+            "interval_coverage": 0.9615384615384616,
+            "interval_half_width": 14.100000000000001
+          },
+          "recent4": {
+            "wape_pct": 20.383717275135837,
+            "bias_pct": -0.12461269028695006,
+            "mae": 4.364663461538461,
+            "observations": 52,
+            "interval_coverage": 0.9615384615384616,
+            "interval_half_width": 11.400000000000002
+          },
+          "croston": {
+            "wape_pct": 19.836302611696034,
+            "bias_pct": -5.29478185937911,
+            "mae": 4.247448296729414,
+            "observations": 52,
+            "interval_coverage": 0.9423076923076923,
+            "interval_half_width": 9.580673679471765
+          },
+          "seasonal": {
+            "wape_pct": 27.49562171628721,
+            "bias_pct": 4.3693026179891,
+            "mae": 5.887499999999999,
+            "observations": 52,
+            "interval_coverage": 0.7884615384615384,
+            "interval_half_width": 9.8
+          },
+          "ml": {
+            "wape_pct": 21.02011044941277,
+            "bias_pct": -0.16004554909543922,
+            "mae": 4.50093114998051,
+            "observations": 52,
+            "interval_coverage": 0.8653846153846154,
+            "interval_half_width": 8.454436726931583
+          }
+        },
+        "2": {
+          "naive": {
+            "wape_pct": 25.690447508142597,
+            "bias_pct": -0.6781778432160028,
+            "mae": 5.536538461538462,
+            "observations": 52,
+            "interval_coverage": 0.8846153846153846,
+            "interval_half_width": 11.8
+          },
+          "recent4": {
+            "wape_pct": 22.153716593048674,
+            "bias_pct": -0.7403627359122343,
+            "mae": 4.7743389423076925,
+            "observations": 52,
+            "interval_coverage": 0.9230769230769231,
+            "interval_half_width": 10.09375
+          },
+          "croston": {
+            "wape_pct": 20.532861184051058,
+            "bias_pct": -6.373731751232807,
+            "mae": 4.425029016520542,
+            "observations": 52,
+            "interval_coverage": 0.9230769230769231,
+            "interval_half_width": 9.45286423452712
+          },
+          "seasonal": {
+            "wape_pct": 27.417123990541203,
+            "bias_pct": 4.243073216436885,
+            "mae": 5.908653846153846,
+            "observations": 52,
+            "interval_coverage": 0.7884615384615384,
+            "interval_half_width": 9.8
+          },
+          "ml": {
+            "wape_pct": 21.333408833917137,
+            "bias_pct": -0.5239712290286773,
+            "mae": 4.597554732640239,
+            "observations": 52,
+            "interval_coverage": 0.8653846153846154,
+            "interval_half_width": 8.45731751965737
+          }
+        },
+        "4": {
+          "naive": {
+            "wape_pct": 25.288174818639018,
+            "bias_pct": -0.9257198807245619,
+            "mae": 5.46346153846154,
+            "observations": 52,
+            "interval_coverage": 0.9038461538461539,
+            "interval_half_width": 11.399999999999999
+          },
+          "recent4": {
+            "wape_pct": 25.208672921580845,
+            "bias_pct": -0.9622806700342856,
+            "mae": 5.446285306490386,
+            "observations": 52,
+            "interval_coverage": 0.8461538461538461,
+            "interval_half_width": 9.311718750000004
+          },
+          "croston": {
+            "wape_pct": 20.23503450670896,
+            "bias_pct": -7.538673020794008,
+            "mae": 4.3717402916465735,
+            "observations": 52,
+            "interval_coverage": 0.8846153846153846,
+            "interval_half_width": 8.790504764298099
+          },
+          "seasonal": {
+            "wape_pct": 26.169388935867186,
+            "bias_pct": 4.156838310561222,
+            "mae": 5.653846153846152,
+            "observations": 52,
+            "interval_coverage": 0.7884615384615384,
+            "interval_half_width": 9.8
+          },
+          "ml": {
+            "wape_pct": 22.51366705455253,
+            "bias_pct": -1.179907891179462,
+            "mae": 4.864034471622508,
+            "observations": 52,
+            "interval_coverage": 0.8653846153846154,
+            "interval_half_width": 8.580132707195208
+          }
+        }
+      }
+    },
+    "N02BE": {
+      "selected": "recent4",
+      "validation_baseline": "recent4",
+      "validation_mae": {
+        "naive": 57.85789583333334,
+        "recent4": 54.8849462890625,
+        "croston": 70.43954833694734,
+        "seasonal": 93.77589930583333,
+        "ml": 62.9428084496657
+      },
+      "test": {
+        "1": {
+          "naive": {
+            "wape_pct": 17.50410055791733,
+            "bias_pct": 0.6875419681836682,
+            "mae": 36.80532692307692,
+            "observations": 52,
+            "interval_coverage": 0.7692307692307693,
+            "interval_half_width": 53.25
+          },
+          "recent4": {
+            "wape_pct": 17.604318888504153,
+            "bias_pct": 1.6213026155953232,
+            "mae": 37.016052884615384,
+            "observations": 52,
+            "interval_coverage": 0.7692307692307693,
+            "interval_half_width": 56.91425000000001
+          },
+          "croston": {
+            "wape_pct": 24.902436611746513,
+            "bias_pct": -2.3205729490026803,
+            "mae": 52.36157765684033,
+            "observations": 52,
+            "interval_coverage": 0.75,
+            "interval_half_width": 71.37346498671488
+          },
+          "seasonal": {
+            "wape_pct": 20.356080431846785,
+            "bias_pct": -0.49123467446771873,
+            "mae": 42.80209615384616,
+            "observations": 52,
+            "interval_coverage": 0.9038461538461539,
+            "interval_half_width": 90.42500000000001
+          },
+          "ml": {
+            "wape_pct": 15.835333195357805,
+            "bias_pct": 2.993921889781466,
+            "mae": 33.29646177834469,
+            "observations": 52,
+            "interval_coverage": 0.9038461538461539,
+            "interval_half_width": 60.055348156390494
+          }
+        },
+        "2": {
+          "naive": {
+            "wape_pct": 20.63750015282894,
+            "bias_pct": 0.4478754769859812,
+            "mae": 43.49736538461538,
+            "observations": 52,
+            "interval_coverage": 0.8269230769230769,
+            "interval_half_width": 74.28800000000001
+          },
+          "recent4": {
+            "wape_pct": 20.857054323891152,
+            "bias_pct": 1.1018151196819506,
+            "mae": 43.960116586538454,
+            "observations": 52,
+            "interval_coverage": 0.7692307692307693,
+            "interval_half_width": 63.636375000000015
+          },
+          "croston": {
+            "wape_pct": 27.470958970592076,
+            "bias_pct": -3.040313830072376,
+            "mae": 57.900149289439256,
+            "observations": 52,
+            "interval_coverage": 0.7307692307692307,
+            "interval_half_width": 73.19685434642366
+          },
+          "seasonal": {
+            "wape_pct": 20.52364943467891,
+            "bias_pct": -0.7060879568421911,
+            "mae": 43.25740384615385,
+            "observations": 52,
+            "interval_coverage": 0.9038461538461539,
+            "interval_half_width": 90.42500000000001
+          },
+          "ml": {
+            "wape_pct": 16.402063916052768,
+            "bias_pct": 2.6461477097051698,
+            "mae": 34.57039670187792,
+            "observations": 52,
+            "interval_coverage": 0.8846153846153846,
+            "interval_half_width": 68.08749046402363
+          }
+        },
+        "4": {
+          "naive": {
+            "wape_pct": 26.293089293845668,
+            "bias_pct": 0.4217620728104653,
+            "mae": 55.431980769230776,
+            "observations": 52,
+            "interval_coverage": 0.7692307692307693,
+            "interval_half_width": 83.70000000000002
+          },
+          "recent4": {
+            "wape_pct": 26.745130461062644,
+            "bias_pct": 0.9561161466748037,
+            "mae": 56.38498925781251,
+            "observations": 52,
+            "interval_coverage": 0.75,
+            "interval_half_width": 87.30156249999999
+          },
+          "croston": {
+            "wape_pct": 31.590968515946226,
+            "bias_pct": -4.032441844619035,
+            "mae": 66.60114905809839,
+            "observations": 52,
+            "interval_coverage": 0.7692307692307693,
+            "interval_half_width": 89.15850871868648
+          },
+          "seasonal": {
+            "wape_pct": 20.38103166193795,
+            "bias_pct": -1.1414676667017163,
+            "mae": 42.96798076923077,
+            "observations": 52,
+            "interval_coverage": 0.9038461538461539,
+            "interval_half_width": 90.42500000000001
+          },
+          "ml": {
+            "wape_pct": 19.378595915302117,
+            "bias_pct": 1.866243799228297,
+            "mae": 40.854611799578606,
+            "observations": 52,
+            "interval_coverage": 0.8269230769230769,
+            "interval_half_width": 71.45690192531215
+          }
+        }
+      }
+    },
+    "N05B": {
+      "selected": "croston",
+      "validation_baseline": "croston",
+      "validation_mae": {
+        "naive": 15.458333333333334,
+        "recent4": 12.938557942708334,
+        "croston": 12.409684638661732,
+        "seasonal": 29.558593748791665,
+        "ml": 14.33604996734212
+      },
+      "test": {
+        "1": {
+          "naive": {
+            "wape_pct": 19.83127756119384,
+            "bias_pct": 0.12142902792868225,
+            "mae": 11.934615384615386,
+            "observations": 52,
+            "interval_coverage": 0.9807692307692307,
+            "interval_half_width": 34.0
+          },
+          "recent4": {
+            "wape_pct": 14.505975586374388,
+            "bias_pct": 0.4138173451779982,
+            "mae": 8.729807692307693,
+            "observations": 52,
+            "interval_coverage": 1.0,
+            "interval_half_width": 33.0
+          },
+          "croston": {
+            "wape_pct": 15.38732209991422,
+            "bias_pct": -3.630866621587181,
+            "mae": 9.260208803744531,
+            "observations": 52,
+            "interval_coverage": 0.9230769230769231,
+            "interval_half_width": 19.518781343255185
+          },
+          "seasonal": {
+            "wape_pct": 26.58017511344028,
+            "bias_pct": -1.5146673483734787,
+            "mae": 15.996153846153845,
+            "observations": 52,
+            "interval_coverage": 0.9807692307692307,
+            "interval_half_width": 49.0
+          },
+          "ml": {
+            "wape_pct": 16.515189719662654,
+            "bias_pct": -3.3387684111209803,
+            "mae": 9.938968213213904,
+            "observations": 52,
+            "interval_coverage": 0.8653846153846154,
+            "interval_half_width": 18.515661136687015
+          }
+        },
+        "2": {
+          "naive": {
+            "wape_pct": 19.460052961312407,
+            "bias_pct": 1.1819414842084988,
+            "mae": 11.588461538461537,
+            "observations": 52,
+            "interval_coverage": 1.0,
+            "interval_half_width": 41.0
+          },
+          "recent4": {
+            "wape_pct": 14.82230510882904,
+            "bias_pct": 1.5206193890073163,
+            "mae": 8.826682692307692,
+            "observations": 52,
+            "interval_coverage": 1.0,
+            "interval_half_width": 31.9375
+          },
+          "croston": {
+            "wape_pct": 16.31850067307605,
+            "bias_pct": -3.097048968406291,
+            "mae": 9.717667150816785,
+            "observations": 52,
+            "interval_coverage": 0.9807692307692307,
+            "interval_half_width": 23.383504312297248
+          },
+          "seasonal": {
+            "wape_pct": 27.404249822385843,
+            "bias_pct": 0.045210876445151,
+            "mae": 16.319230769230767,
+            "observations": 52,
+            "interval_coverage": 0.9807692307692307,
+            "interval_half_width": 49.0
+          },
+          "ml": {
+            "wape_pct": 16.975477010576792,
+            "bias_pct": -3.534008092941531,
+            "mae": 10.108896559798477,
+            "observations": 52,
+            "interval_coverage": 0.9423076923076923,
+            "interval_half_width": 21.895652584686154
+          }
+        },
+        "4": {
+          "naive": {
+            "wape_pct": 20.58596761757903,
+            "bias_pct": 0.6553585196607733,
+            "mae": 12.323076923076922,
+            "observations": 52,
+            "interval_coverage": 1.0,
+            "interval_half_width": 30.0
+          },
+          "recent4": {
+            "wape_pct": 17.865923565600106,
+            "bias_pct": 0.8765972356078306,
+            "mae": 10.69481670673077,
+            "observations": 52,
+            "interval_coverage": 1.0,
+            "interval_half_width": 31.46484375
+          },
+          "croston": {
+            "wape_pct": 17.66114875739881,
+            "bias_pct": -4.56293911438484,
+            "mae": 10.572235356159808,
+            "observations": 52,
+            "interval_coverage": 0.8846153846153846,
+            "interval_half_width": 18.574488412418624
+          },
+          "seasonal": {
+            "wape_pct": 27.011051143664876,
+            "bias_pct": 0.29555384219997205,
+            "mae": 16.16923076923077,
+            "observations": 52,
+            "interval_coverage": 0.9423076923076923,
+            "interval_half_width": 43.0
+          },
+          "ml": {
+            "wape_pct": 16.723379934232316,
+            "bias_pct": -2.698949537362599,
+            "mae": 10.01087251139968,
+            "observations": 52,
+            "interval_coverage": 0.9615384615384616,
+            "interval_half_width": 22.978516682416
+          }
+        }
+      }
+    },
+    "N05C": {
+      "selected": "croston",
+      "validation_baseline": "croston",
+      "validation_mae": {
+        "naive": 2.8645833333333335,
+        "recent4": 2.6285400390625,
+        "croston": 2.281453042084108,
+        "seasonal": 3.5937499999583338,
+        "ml": 2.978961653271981
+      },
+      "test": {
+        "1": {
+          "naive": {
+            "wape_pct": 62.5,
+            "bias_pct": 0.3787878787878788,
+            "mae": 3.173076923076923,
+            "observations": 52,
+            "interval_coverage": 1.0,
+            "interval_half_width": 13.0
+          },
+          "recent4": {
+            "wape_pct": 49.053030303030305,
+            "bias_pct": -1.7045454545454546,
+            "mae": 2.4903846153846154,
+            "observations": 52,
+            "interval_coverage": 0.9807692307692307,
+            "interval_half_width": 6.5
+          },
+          "croston": {
+            "wape_pct": 43.47550341009369,
+            "bias_pct": -10.225774380469062,
+            "mae": 2.207217865435526,
+            "observations": 52,
+            "interval_coverage": 0.9423076923076923,
+            "interval_half_width": 5.378458270275363
+          },
+          "seasonal": {
+            "wape_pct": 73.10606060606061,
+            "bias_pct": -20.075757575757574,
+            "mae": 3.7115384615384617,
+            "observations": 52,
+            "interval_coverage": 0.9423076923076923,
+            "interval_half_width": 10.0
+          },
+          "ml": {
+            "wape_pct": 49.84626109554238,
+            "bias_pct": -23.229646365090243,
+            "mae": 2.5306563325429208,
+            "observations": 52,
+            "interval_coverage": 0.9807692307692307,
+            "interval_half_width": 7.3246842055688575
+          }
+        },
+        "2": {
+          "naive": {
+            "wape_pct": 63.25757575757576,
+            "bias_pct": 0.3787878787878788,
+            "mae": 3.2115384615384617,
+            "observations": 52,
+            "interval_coverage": 1.0,
+            "interval_half_width": 14.0
+          },
+          "recent4": {
+            "wape_pct": 53.125,
+            "bias_pct": -1.2784090909090908,
+            "mae": 2.6971153846153846,
+            "observations": 52,
+            "interval_coverage": 1.0,
+            "interval_half_width": 7.375
+          },
+          "croston": {
+            "wape_pct": 44.236890490398594,
+            "bias_pct": -10.952585114452452,
+            "mae": 2.245872901820236,
+            "observations": 52,
+            "interval_coverage": 0.9423076923076923,
+            "interval_half_width": 5.326600091442873
+          },
+          "seasonal": {
+            "wape_pct": 71.5909090909091,
+            "bias_pct": -21.59090909090909,
+            "mae": 3.6346153846153846,
+            "observations": 52,
+            "interval_coverage": 0.9423076923076923,
+            "interval_half_width": 10.0
+          },
+          "ml": {
+            "wape_pct": 48.67249591230129,
+            "bias_pct": -27.269687721659963,
+            "mae": 2.471065177086065,
+            "observations": 52,
+            "interval_coverage": 0.9615384615384616,
+            "interval_half_width": 7.070815581767655
+          }
+        },
+        "4": {
+          "naive": {
+            "wape_pct": 61.132075471698116,
+            "bias_pct": 0.0,
+            "mae": 3.1153846153846154,
+            "observations": 52,
+            "interval_coverage": 1.0,
+            "interval_half_width": 10.0
+          },
+          "recent4": {
+            "wape_pct": 47.74469339622642,
+            "bias_pct": -1.3060141509433962,
+            "mae": 2.4331430288461537,
+            "observations": 52,
+            "interval_coverage": 1.0,
+            "interval_half_width": 7.5390625
+          },
+          "croston": {
+            "wape_pct": 44.59923840170042,
+            "bias_pct": -12.124572765754017,
+            "mae": 2.2728458031635794,
+            "observations": 52,
+            "interval_coverage": 0.9038461538461539,
+            "interval_half_width": 4.689397688548244
+          },
+          "seasonal": {
+            "wape_pct": 67.9245283018868,
+            "bias_pct": -26.41509433962264,
+            "mae": 3.4615384615384617,
+            "observations": 52,
+            "interval_coverage": 0.8846153846153846,
+            "interval_half_width": 7.0
+          },
+          "ml": {
+            "wape_pct": 47.884432906088165,
+            "bias_pct": -24.541490771079307,
+            "mae": 2.44026436925257,
+            "observations": 52,
+            "interval_coverage": 0.9615384615384616,
+            "interval_half_width": 5.475331220278594
+          }
+        }
+      }
+    },
+    "R03": {
+      "selected": "recent4",
+      "validation_baseline": "recent4",
+      "validation_mae": {
+        "naive": 22.421875,
+        "recent4": 17.015574137369793,
+        "croston": 18.645978770027714,
+        "seasonal": 21.013454861208334,
+        "ml": 17.355578674843706
+      },
+      "test": {
+        "1": {
+          "naive": {
+            "wape_pct": 41.348371849209514,
+            "bias_pct": 0.4075683172235455,
+            "mae": 23.411858974230768,
+            "observations": 52,
+            "interval_coverage": 0.8076923076923077,
+            "interval_half_width": 40.0
+          },
+          "recent4": {
+            "wape_pct": 41.2747831254928,
+            "bias_pct": 1.9444405134206648,
+            "mae": 23.370192307692307,
+            "observations": 52,
+            "interval_coverage": 0.75,
+            "interval_half_width": 27.25
+          },
+          "croston": {
+            "wape_pct": 41.10015262303271,
+            "bias_pct": -5.06459099980617,
+            "mae": 23.27131478208853,
+            "observations": 52,
+            "interval_coverage": 0.6923076923076923,
+            "interval_half_width": 29.522298873210637
+          },
+          "seasonal": {
+            "wape_pct": 45.632084683700796,
+            "bias_pct": -22.111996377258702,
+            "mae": 25.837339743653846,
+            "observations": 52,
+            "interval_coverage": 0.7307692307692307,
+            "interval_half_width": 36.0
+          },
+          "ml": {
+            "wape_pct": 39.68447531057917,
+            "bias_pct": -10.375240816519955,
+            "mae": 22.46974422175185,
+            "observations": 52,
+            "interval_coverage": 0.7115384615384616,
+            "interval_half_width": 34.615453604944754
+          }
+        },
+        "2": {
+          "naive": {
+            "wape_pct": 44.50462520840433,
+            "bias_pct": 1.1288644364929614,
+            "mae": 25.01923076923077,
+            "observations": 52,
+            "interval_coverage": 0.7884615384615384,
+            "interval_half_width": 35.0
+          },
+          "recent4": {
+            "wape_pct": 44.78327798304448,
+            "bias_pct": 2.17434684074495,
+            "mae": 25.175881410384616,
+            "observations": 52,
+            "interval_coverage": 0.7115384615384616,
+            "interval_half_width": 28.625
+          },
+          "croston": {
+            "wape_pct": 42.899855241961845,
+            "bias_pct": -4.860692111493308,
+            "mae": 24.117074871187768,
+            "observations": 52,
+            "interval_coverage": 0.6730769230769231,
+            "interval_half_width": 30.54009708760509
+          },
+          "seasonal": {
+            "wape_pct": 45.72043501196343,
+            "bias_pct": -20.594649296688278,
+            "mae": 25.702724359038463,
+            "observations": 52,
+            "interval_coverage": 0.6923076923076923,
+            "interval_half_width": 31.0
+          },
+          "ml": {
+            "wape_pct": 42.160760765735866,
+            "bias_pct": -9.742171417701867,
+            "mae": 23.70157703979676,
+            "observations": 52,
+            "interval_coverage": 0.75,
+            "interval_half_width": 32.33761182823677
+          }
+        },
+        "4": {
+          "naive": {
+            "wape_pct": 55.94145120708692,
+            "bias_pct": 3.2329875307208873,
+            "mae": 30.807692307826926,
+            "observations": 52,
+            "interval_coverage": 0.5961538461538461,
+            "interval_half_width": 35.0
+          },
+          "recent4": {
+            "wape_pct": 47.70379861503299,
+            "bias_pct": 4.121395262536014,
+            "mae": 26.27110877417308,
+            "observations": 52,
+            "interval_coverage": 0.7115384615384616,
+            "interval_half_width": 33.44921875
+          },
+          "croston": {
+            "wape_pct": 43.96011609348737,
+            "bias_pct": -3.849949990617171,
+            "mae": 24.20941361372726,
+            "observations": 52,
+            "interval_coverage": 0.7115384615384616,
+            "interval_half_width": 32.68268691415894
+          },
+          "seasonal": {
+            "wape_pct": 47.18095709239255,
+            "bias_pct": -19.536149223865923,
+            "mae": 25.98317307698077,
+            "observations": 52,
+            "interval_coverage": 0.7307692307692307,
+            "interval_half_width": 35.0
+          },
+          "ml": {
+            "wape_pct": 43.186224999699554,
+            "bias_pct": -11.46390895657193,
+            "mae": 23.783221618655055,
+            "observations": 52,
+            "interval_coverage": 0.7692307692307693,
+            "interval_half_width": 39.66297569678122
+          }
+        }
+      }
+    },
+    "R06": {
+      "selected": "ml",
+      "validation_baseline": "recent4",
+      "validation_mae": {
+        "naive": 5.071458333333333,
+        "recent4": 3.859407552083333,
+        "croston": 4.767326551558477,
+        "seasonal": 4.408958333249999,
+        "ml": 3.770826926335024
+      },
+      "test": {
+        "1": {
+          "naive": {
+            "wape_pct": 28.32045428880249,
+            "bias_pct": -1.0566731734073382,
+            "mae": 6.7519230769230765,
+            "observations": 52,
+            "interval_coverage": 0.9423076923076923,
+            "interval_half_width": 17.240000000000002
+          },
+          "recent4": {
+            "wape_pct": 29.637262651846356,
+            "bias_pct": -1.7886814977333736,
+            "mae": 7.0658653846153845,
+            "observations": 52,
+            "interval_coverage": 0.9615384615384616,
+            "interval_half_width": 18.949999999999996
+          },
+          "croston": {
+            "wape_pct": 35.02289463740185,
+            "bias_pct": -6.164384261322627,
+            "mae": 8.34986219187934,
+            "observations": 52,
+            "interval_coverage": 1.0,
+            "interval_half_width": 37.59238379116082
+          },
+          "seasonal": {
+            "wape_pct": 35.968832174488206,
+            "bias_pct": -8.117831158146053,
+            "mae": 8.575384615384618,
+            "observations": 52,
+            "interval_coverage": 0.9807692307692307,
+            "interval_half_width": 30.3
+          },
+          "ml": {
+            "wape_pct": 23.95183914982806,
+            "bias_pct": -6.9586022716528735,
+            "mae": 5.710394820693816,
+            "observations": 52,
+            "interval_coverage": 0.9807692307692307,
+            "interval_half_width": 21.486966751378112
+          }
+        },
+        "2": {
+          "naive": {
+            "wape_pct": 35.10715966059348,
+            "bias_pct": -0.49483264922042847,
+            "mae": 8.322692307692307,
+            "observations": 52,
+            "interval_coverage": 0.9615384615384616,
+            "interval_half_width": 26.299999999999997
+          },
+          "recent4": {
+            "wape_pct": 32.644657429790556,
+            "bias_pct": -1.159510521277771,
+            "mae": 7.738918269230769,
+            "observations": 52,
+            "interval_coverage": 0.9615384615384616,
+            "interval_half_width": 23.462500000000006
+          },
+          "croston": {
+            "wape_pct": 37.55919276518082,
+            "bias_pct": -6.103389664821006,
+            "mae": 8.90398447872096,
+            "observations": 52,
+            "interval_coverage": 1.0,
+            "interval_half_width": 39.74676041356113
+          },
+          "seasonal": {
+            "wape_pct": 35.92971753978942,
+            "bias_pct": -6.784885701770013,
+            "mae": 8.51769230769231,
+            "observations": 52,
+            "interval_coverage": 0.9807692307692307,
+            "interval_half_width": 30.3
+          },
+          "ml": {
+            "wape_pct": 26.200254318934256,
+            "bias_pct": -8.984468157474895,
+            "mae": 6.211173367139041,
+            "observations": 52,
+            "interval_coverage": 0.9807692307692307,
+            "interval_half_width": 21.826238780832245
+          }
+        },
+        "4": {
+          "naive": {
+            "wape_pct": 39.42844259060933,
+            "bias_pct": -1.2263763517920572,
+            "mae": 9.416346153846153,
+            "observations": 52,
+            "interval_coverage": 0.9423076923076923,
+            "interval_half_width": 29.5
+          },
+          "recent4": {
+            "wape_pct": 38.42079510133911,
+            "bias_pct": -1.6951439663572034,
+            "mae": 9.175698617788461,
+            "observations": 52,
+            "interval_coverage": 1.0,
+            "interval_half_width": 36.10703125
+          },
+          "croston": {
+            "wape_pct": 39.70554418907774,
+            "bias_pct": -7.723433126632972,
+            "mae": 9.482523877324994,
+            "observations": 52,
+            "interval_coverage": 1.0,
+            "interval_half_width": 42.78394897843585
+          },
+          "seasonal": {
+            "wape_pct": 35.12042323270553,
+            "bias_pct": -6.656896454540319,
+            "mae": 8.387500000000001,
+            "observations": 52,
+            "interval_coverage": 0.9807692307692307,
+            "interval_half_width": 30.3
+          },
+          "ml": {
+            "wape_pct": 25.859557213215872,
+            "bias_pct": -14.430475862893209,
+            "mae": 6.175809291610845,
+            "observations": 52,
+            "interval_coverage": 0.9423076923076923,
+            "interval_half_width": 24.177378750946627
+          }
+        }
+      }
+    }
+  },
+  "sha256": "49e4f1c5c3daf5220fdda10785256dba5ff89c1ec18703e5ad676b7449d55b2e",
+  "complete_weeks": 300,
+  "windows": {
+    "test": {
+      "origins": 52,
+      "first_target_week_ending": "2018-09-23",
+      "last_target_week_ending": "2019-10-06"
+    },
+    "calibration": {
+      "origins": 24,
+      "first_target_week_ending": "2018-03-18",
+      "last_target_week_ending": "2018-09-16"
+    },
+    "validation": {
+      "origins": 24,
+      "first_target_week_ending": "2017-09-10",
+      "last_target_week_ending": "2018-03-11"
+    }
+  }
+}

@@ -73,6 +73,13 @@ export interface NetworkRow {
   status: string;
   projection_method: string;
   inbound_units: number;
+  in_transit_units?: number;
+  recommendation?: {
+    quantity: number;
+    needed_by: string;
+    cover_through: string;
+    pack_size: number;
+  } | null;
   evidence_type: string;
   forecast_job_id?: string | null;
 }
@@ -188,6 +195,10 @@ export interface ForecastResult {
   status?: string;
   reason?: string;
   selected_model?: string;
+  validation_baseline?: string;
+  last_complete_week?: string;
+  history?: { date: string; actual: number }[];
+  evaluation_windows?: Record<string, EvaluationWindow>;
   forecast?: ForecastPoint[];
   operational_forecast?: ForecastPoint[];
   test_metrics_by_horizon?: Record<string, Record<string, Metrics>>;
@@ -202,7 +213,17 @@ export interface ForecastResult {
   change?: Record<string, { absolute: number; relative_pct: number | null }>;
   service_change_percentage_points?: number | null;
   assumptions?: string[];
+  safety_stock_options?: ({ safety_days: number } & Record<
+    string,
+    number | null
+  >)[];
+  lower_inventory_at_baseline_service_days?: number | null;
   [key: string]: unknown;
+}
+export interface EvaluationWindow {
+  origins: number;
+  first_target_week_ending: string;
+  last_target_week_ending: string;
 }
 export interface Job {
   id: string;

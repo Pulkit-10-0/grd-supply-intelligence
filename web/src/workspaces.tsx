@@ -9,6 +9,8 @@ import {
   Line,
   ComposedChart,
   ResponsiveContainer,
+  Scatter,
+  ScatterChart,
   Tooltip,
   XAxis,
   YAxis,
@@ -42,6 +44,7 @@ import {
   parseInstant,
   daysBetween,
   exportCsv,
+  forecastMethod,
   hasRole,
   number,
   shortLocation,
@@ -309,8 +312,7 @@ export function ForecastWorkspace({
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [metricHorizon, setMetricHorizon] = useState("1"),
-    [lead, setLead] = useState(5),
-    [safety, setSafety] = useState(10);
+    [lead, setLead] = useState(5);
   const product = data.products.find((x) => x.id === productId);
   const selectedLocation =
     data.locations.find((x) => x.id === locationId) ||
@@ -364,7 +366,7 @@ export function ForecastWorkspace({
     };
   }, [productId, locId, datasetsVersion]);
   const chart = useMemo(() => {
-    const past = weeklyHistory(history, asOf);
+    const past = forecastJob?.result.history || weeklyHistory(history, asOf);
     const future =
       forecastJob?.result.operational_forecast ||
       forecastJob?.result.forecast ||
@@ -383,7 +385,11 @@ export function ForecastWorkspace({
           actual: null,
           forecast: x.quantity,
           band:
-            q?.lower != null && q?.upper != null ? [q.lower, q.upper] : null,
+            x.lower != null && x.upper != null
+              ? [x.lower, x.upper]
+              : q?.lower != null && q?.upper != null
+                ? [q.lower, q.upper]
+                : null,
         };
       }),
     ];
@@ -391,11 +397,8 @@ export function ForecastWorkspace({
   const scores = forecastJob?.result.test_metrics_by_horizon?.[metricHorizon];
   const method = forecastJob?.result.selected_model || "recent4";
   const selected = scores?.[method];
-  const baseline = scores?.recent4;
-  const uplift =
-    baseline?.wape_pct && selected?.wape_pct != null
-      ? (100 * (baseline.wape_pct - selected.wape_pct)) / baseline.wape_pct
-      : null;
+  const baseline = scores?.naive;
+  const windows = forecastJob?.result.evaluation_windows;
   async function run() {
     setBusy(true);
     setError("");
@@ -417,14 +420,14 @@ export function ForecastWorkspace({
               seed: 42,
               days: 90,
               lead_days: lead,
-              proposed_safety_days: safety,
+              proposed_safety_days: 2,
             },
       );
       await onRefresh();
       notify(
         tab === "forecast"
           ? "Forecast queued. Results will appear when the worker completes."
-          : "Policy comparison queued with shared scenario randomness.",
+          : "Policy comparison queued.",
       );
     } catch (e) {
       setError((e as Error).message);
@@ -544,18 +547,16 @@ export function ForecastWorkspace({
         <>
           <div className="forecast-stats">
             <div className="evidence-stat">
-              <small>SELECTED METHOD</small>
+              <small>OPERATING METHOD</small>
               <strong>
-                {forecastJob
-                  ? method === "ml"
-                    ? "Gradient boosting"
-                    : title(method)
-                  : "Not evaluated"}
+                {forecastJob ? forecastMethod(method) : "Not evaluated"}
               </strong>
               <span>
                 {forecastJob?.result.selection?.includes("fallback")
                   ? "Short-history fallback; evaluation unavailable"
-                  : "Chosen using validation results"}
+                  : forecastJob
+                    ? "Selected on validation"
+                    : "Run a forecast to compare methods"}
               </span>
             </div>
             <div className="evidence-stat">
@@ -564,16 +565,19 @@ export function ForecastWorkspace({
                 {number(selected?.wape_pct, 1)}
                 {selected?.wape_pct != null && <em>%</em>}
               </strong>
-              <span>Lower is better · {metricHorizon}-week horizon</span>
+              <span>
+                {selected?.observations ?? 0} test windows · {metricHorizon}
+                -week horizon
+              </span>
             </div>
             <div className="evidence-stat">
-              <small>ERROR REDUCTION VS BASELINE</small>
-              <strong
-                className={uplift != null && uplift >= 0 ? "text-green" : ""}
-              >
-                {uplift == null ? "—" : `${number(uplift, 1)}%`}
+              <small>LAST-WEEK BASELINE</small>
+              <strong>
+                {baseline?.wape_pct == null
+                  ? "—"
+                  : `${number(baseline.wape_pct, 1)}%`}
               </strong>
-              <span>Relative to the recent-four-week baseline</span>
+              <span>Same held-out weeks</span>
             </div>
             <div className="evidence-stat">
               <small>INTERVAL COVERAGE</small>
@@ -582,7 +586,7 @@ export function ForecastWorkspace({
                   ? "—"
                   : `${number(selected.interval_coverage * 100, 0)}%`}
               </strong>
-              <span>Observed on the held-out test windows</span>
+              <span>Held-out coverage · 90% nominal</span>
             </div>
           </div>
           <section className="panel forecast-chart">
@@ -658,6 +662,7 @@ export function ForecastWorkspace({
                     <Area
                       type="monotone"
                       dataKey="band"
+                      isAnimationActive={false}
                       stroke="none"
                       fill="#b8c9ef"
                       fillOpacity={0.4}
@@ -665,6 +670,7 @@ export function ForecastWorkspace({
                     <Area
                       type="monotone"
                       dataKey="actual"
+                      isAnimationActive={false}
                       stroke="#2d7560"
                       strokeWidth={2.5}
                       fill="url(#demand-fill)"
@@ -673,6 +679,7 @@ export function ForecastWorkspace({
                     <Line
                       type="monotone"
                       dataKey="forecast"
+                      isAnimationActive={false}
                       stroke="#6579b7"
                       strokeWidth={2.5}
                       strokeDasharray="5 4"
@@ -710,7 +717,7 @@ export function ForecastWorkspace({
             <div className="chart-caption">
               <ShieldCheck size={15} />
               {forecastJob
-                ? `Cut-off ${dateLabel(forecastJob.result.source_cutoff, true)} · ${forecastJob.result.complete_weeks} complete weeks · ${forecastJob.result.model_version}`
+                ? `Last complete week ${dateLabel(forecastJob.result.last_complete_week, true)} · ${forecastJob.result.complete_weeks} complete weeks · forecast starts ${dateLabel(forecastJob.result.operational_forecast?.[0]?.week_ending)}`
                 : "Run a forecast to add the next four weeks and held-out evaluation."}
             </div>
           </section>
@@ -733,7 +740,11 @@ export function ForecastWorkspace({
                   </select>
                 }
               >
-                Final test targets stay separate from model selection.
+                {windows?.test
+                  ? `${windows.validation.origins} selection, ${windows.calibration.origins} calibration and ${windows.test.origins} final test windows. ML is selected when it beats the strongest validation baseline.`
+                  : forecastJob && scores
+                    ? "Earlier evaluation. Run the forecast again for the longer rolling test."
+                    : "Final test targets stay separate from model selection."}
               </SectionTitle>
               {scores ? (
                 <div className="method-list">
@@ -745,7 +756,7 @@ export function ForecastWorkspace({
                         ) : (
                           <span className="method-dot" />
                         )}
-                        {name === "ml" ? "Gradient boosting" : title(name)}
+                        {forecastMethod(name)}
                         {name === method && (
                           <Badge tone="green">Selected</Badge>
                         )}
@@ -793,8 +804,8 @@ export function ForecastWorkspace({
               title="Policy comparison"
               action={<Badge tone="demo">Policy simulation</Badge>}
             >
-              Both policies face the same demand, delivery delays and starting
-              stock.
+              Compare stock buffers against the same demand, deliveries and
+              opening stock.
             </SectionTitle>
             <div className="simulation-controls">
               <label>
@@ -808,26 +819,23 @@ export function ForecastWorkspace({
                   onChange={(e) => setLead(Number(e.target.value))}
                 />
               </label>
-              <label>
-                Proposed safety stock <strong>{safety} days</strong>
-                <input
-                  aria-label="Simulation safety stock"
-                  type="range"
-                  min="1"
-                  max="28"
-                  value={safety}
-                  onChange={(e) => setSafety(Number(e.target.value))}
-                />
-              </label>
+              <div className="simulation-fixed">
+                <small>STOCK BUFFERS TESTED</small>
+                <strong>0–10 days</strong>
+                <span>Seven policies · baseline is 2 days</span>
+              </div>
               <div className="simulation-fixed">
                 <small>COMPARISON WINDOW</small>
                 <strong>90 days</strong>
-                <span>Baseline safety stock: 2 days · seed 42</span>
+                <span>Shared scenario seed 42</span>
               </div>
             </div>
           </section>
           {simulation ? (
-            <SimulationResult job={simulation} />
+            <SimulationResult
+              job={simulation}
+              unit={product?.base_unit || "unit"}
+            />
           ) : (
             <section className="panel">
               <Empty
@@ -870,7 +878,7 @@ function MapPinIcon() {
     </svg>
   );
 }
-function SimulationResult({ job }: { job: Job }) {
+function SimulationResult({ job, unit }: { job: Job; unit: string }) {
   const a = job.result.baseline!,
     b = job.result.proposed!;
   const rows = [
@@ -880,6 +888,107 @@ function SimulationResult({ job }: { job: Job }) {
     ["expired_units", "Expiry writeoffs", " units"],
     ["average_inventory_units", "Average inventory", " units"],
   ] as const;
+  const frontier = job.result.safety_stock_options;
+  if (frontier?.length) {
+    const comparable = frontier.find(
+      (point) =>
+        point.safety_days ===
+        job.result.lower_inventory_at_baseline_service_days,
+    );
+    return (
+      <section className="panel">
+        <SectionTitle
+          title="Service versus inventory"
+          action={<Badge tone="blue">Synthetic simulation</Badge>}
+        >
+          Each point is one stock buffer. Look for higher fulfilment with fewer{" "}
+          {unit}s on hand.
+        </SectionTitle>
+        <div className="simulation-results">
+          <ResponsiveContainer width="100%" height={262}>
+            <ScatterChart margin={{ top: 12, right: 12, bottom: 18, left: 12 }}>
+              <CartesianGrid strokeDasharray="3 5" />
+              <XAxis
+                type="number"
+                dataKey="average_inventory_units"
+                name="Average on hand"
+                unit={` ${unit}s`}
+                label={{
+                  value: `Average on hand (${unit}s)`,
+                  position: "insideBottom",
+                  offset: -10,
+                  fontSize: 11,
+                }}
+                tickFormatter={(x) => number(x, 0)}
+              />
+              <YAxis
+                type="number"
+                dataKey="fill_rate_pct"
+                name="Fill rate"
+                unit="%"
+                domain={["dataMin", 100]}
+                tickFormatter={(x) => `${number(x, 1)}%`}
+              />
+              <Tooltip
+                formatter={(x, label) => [number(Number(x), 1), label]}
+              />
+              <Scatter
+                data={frontier.filter((point) => point.fill_rate_pct != null)}
+                fill="#2f765f"
+                isAnimationActive={false}
+              />
+            </ScatterChart>
+          </ResponsiveContainer>
+          <div className="table-scroll">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Buffer</th>
+                  <th>Fill</th>
+                  <th>Unmet</th>
+                  <th>Shortage days</th>
+                  <th>Expired</th>
+                  <th>Avg. on hand</th>
+                </tr>
+              </thead>
+              <tbody>
+                {frontier.map((point) => (
+                  <tr
+                    key={point.safety_days}
+                    className={point.safety_days === 2 ? "selected-metric" : ""}
+                  >
+                    <td>
+                      {point.safety_days}d
+                      {point.safety_days === 2 ? " · baseline" : ""}
+                    </td>
+                    <td>
+                      {point.fill_rate_pct == null
+                        ? "—"
+                        : `${number(point.fill_rate_pct, 2)}%`}
+                    </td>
+                    <td>{number(point.unmet_units)}</td>
+                    <td>{number(point.shortage_days)}</td>
+                    <td>{number(point.expired_units)}</td>
+                    <td>{number(point.average_inventory_units, 1)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div className="notice">
+          <FlaskConical size={19} />
+          <p>
+            {comparable
+              ? `The ${comparable.safety_days}-day buffer uses ${number(comparable.average_inventory_units, 1)} ${unit}s on average versus ${number(a.average_inventory_units, 1)} at baseline, while matching or improving unmet demand, shortage days and expiry in this run.`
+              : "In this run, lower average stock did not also match baseline service and expiry."}{" "}
+            This is a single-lane experiment. Excess-stock reduction is a pilot
+            measure.
+          </p>
+        </div>
+      </section>
+    );
+  }
   return (
     <section className="panel">
       <SectionTitle

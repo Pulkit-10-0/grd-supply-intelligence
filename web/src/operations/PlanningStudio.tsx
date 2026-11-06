@@ -29,9 +29,11 @@ import {
 export function RiskGrid({
   rows,
   onCell,
+  unit = "unit",
 }: {
   rows: NetworkRow[];
   onCell: (id: string) => void;
+  unit?: string;
 }) {
   if (!rows.length) return null;
   return (
@@ -63,22 +65,29 @@ export function RiskGrid({
                       ? "Stale stock · reconcile first"
                       : row.action_deadline
                         ? `Act by ${dateLabel(row.action_deadline.latest_action_on)} · ${row.action_deadline.slack_days}d slack`
-                        : "No deadline / insufficient route evidence"}
+                        : row.status === "covered"
+                          ? "Covered through this horizon"
+                          : "No deadline / insufficient route evidence"}
                   </small>
                 </th>
                 {row.timeline?.map((day) => (
                   <td key={day.date}>
                     <button
                       className={`risk-cell ${row.input_status === "stale" ? "stale" : day.status}`}
-                      aria-label={`${shortLocation(row.name)}, ${day.date}: ${day.status}, ${day.balance ?? "unknown"} units`}
-                      title={`${dateLabel(day.date)} · ${number(day.balance)} left · ${number(day.unserved)} unserved`}
+                      aria-label={`${shortLocation(row.name)}, ${day.date}: ${day.status}, ${day.balance ?? "unknown"} ${unit}s left, ${day.receipts} expected to arrive`}
+                      title={`${dateLabel(day.date)} · ${number(day.balance)} left · ${number(day.unserved)} unserved · ${number(day.receipts)} expected (${number(day.in_transit_receipts ?? 0)} in transit)`}
                       onClick={() => onCell(row.location_id)}
                     >
                       {day.balance === null
                         ? "?"
                         : day.unserved
                           ? "!"
-                          : Math.round(day.balance)}
+                          : number(day.balance, 0)}
+                      {day.receipts > 0 && (
+                        <span className="risk-arrival">
+                          +{number(day.receipts, 0)}
+                        </span>
+                      )}
                     </button>
                   </td>
                 ))}
@@ -104,7 +113,9 @@ export function RiskGrid({
           <i className="unknown" />
           Unknown
         </span>
-        <span>Central estimate · planned arrivals</span>
+        <span>
+          <b className="risk-arrival">+</b> Expected arrival
+        </span>
       </div>
     </section>
   );
@@ -176,6 +187,7 @@ export function PlanningStudio({
   locationId,
   onLocation,
   asOf,
+  network,
   onRefresh,
   notify,
 }: {
@@ -185,6 +197,7 @@ export function PlanningStudio({
   locationId: string;
   onLocation: (id: string) => void;
   asOf: string;
+  network?: Network | null;
   onRefresh: () => Promise<void>;
   notify: (s: string) => void;
 }) {
@@ -195,7 +208,7 @@ export function PlanningStudio({
     [selected, setSelected] = useState<Workflow<ComparisonPayload> | null>(
       null,
     ),
-    [quantity, setQuantity] = useState("100"),
+    [entered, setEntered] = useState<{ key: string; value: string }>(),
     [choice, setChoice] = useState(0),
     [shock, setShock] = useState<Workflow<ScenarioPayload> | null>(null),
     [delay, setDelay] = useState("3"),
@@ -204,6 +217,15 @@ export function PlanningStudio({
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   const canPlan = hasRole(data, "planner", "manager");
+  const product = data.products.find((p) => p.id === productId);
+  const recommendation = network?.table.find(
+    (r) => r.location_id === locationId && r.product_id === productId,
+  )?.recommendation;
+  const quantityKey = productId + ":" + locationId;
+  const quantity =
+    entered?.key === quantityKey
+      ? entered.value
+      : String(recommendation?.quantity ?? product?.pack_size ?? 1);
   async function refresh() {
     const [a, b] = await Promise.all([
       api<{ items: Workflow<ComparisonPayload>[] }>("/operations/comparison"),
@@ -259,7 +281,7 @@ export function PlanningStudio({
     table: projectedRows,
     features: [],
     as_of: selected?.payload.as_of || asOf,
-    horizon_days: 28,
+    horizon_days: selected?.payload.horizon || 21,
     inventory_revision: selected?.payload.snapshot.inventory_revision || 0,
     evidence_type: "hypothetical_scenario",
   };
@@ -314,7 +336,7 @@ export function PlanningStudio({
             </select>
           </label>
           <label>
-            Quantity · base units
+            Quantity · {product?.base_unit || "unit"}s
             <input
               type="number"
               min={
@@ -324,7 +346,9 @@ export function PlanningStudio({
                 data.products.find((p) => p.id === productId)?.pack_size || 1
               }
               value={quantity}
-              onChange={(e) => setQuantity(e.target.value)}
+              onChange={(e) =>
+                setEntered({ key: quantityKey, value: e.target.value })
+              }
             />
           </label>
           <button
@@ -340,7 +364,7 @@ export function PlanningStudio({
                     quantity: Number(quantity),
                     as_of: asOf,
                     name: "Supply comparison",
-                    horizon: 28,
+                    horizon: network?.horizon_days || 21,
                   },
                 );
                 setSelected(c);
@@ -353,6 +377,14 @@ export function PlanningStudio({
             {busy ? "Working…" : "Compare options"}
           </button>
         </div>
+        {recommendation && (
+          <p className="ops-note">
+            Suggested {number(recommendation.quantity)}{" "}
+            {product?.base_unit || "unit"}s by{" "}
+            {dateLabel(recommendation.needed_by)} to cover demand through{" "}
+            {dateLabel(recommendation.cover_through)}.
+          </p>
+        )}
       </section>
       <div className="studio-layout">
         <aside className="panel saved-scenarios">
@@ -628,7 +660,7 @@ export function TimelineEvidence({
 }: {
   row: NetworkRow;
   onClose: () => void;
-  onPlan: () => void;
+  onPlan?: () => void;
 }) {
   return (
     <Modal
@@ -678,9 +710,11 @@ export function TimelineEvidence({
             .
           </p>
         </Details>
-        <button className="button primary" onClick={onPlan}>
-          Review supply options <ArrowRight size={16} />
-        </button>
+        {onPlan && (
+          <button className="button primary" onClick={onPlan}>
+            Review supply options <ArrowRight size={16} />
+          </button>
+        )}
       </div>
     </Modal>
   );

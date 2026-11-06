@@ -3,6 +3,7 @@ export interface TimelineDay {
   balance: number | null;
   unserved: number | null;
   receipts: number;
+  in_transit_receipts?: number;
   expiry: number;
   demand: number;
   status: string;

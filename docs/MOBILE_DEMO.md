@@ -2,11 +2,11 @@
 
 **2 November upgrade:** Android 1.2.0 / version code 3 is built for the same hosted API. It adds shipment QR/delivery proof and an Operations desk for alerts, counts, suppliers and staged returns. Authorised records persist until session expiry, and the encrypted outbox now holds 100 commands (25 KB each). See [the upgrade release checklist](UPGRADE_IMPLEMENTATION.md) for current build/device evidence. Version 1.1.0 verification below is historical. The current package is `outputs/mobile-demo/GRD-Supply-Android.apk` (also retained as `GRD-Supply-Android-1.2.0.apk`). See the upgrade checklist for native acceptance limitations.
 
-The Expo / React Native client is in `mobile`, using SDK 58 / React Native 0.88. It uses native components and Expo Router, not an embedded website. It shares product types, display helpers and the action ranking with the website. Android connects to the same authenticated FastAPI backend as the website, at **https://grd-supply-demo.onrender.com**. The iOS native build is skipped; cross-platform source is retained.
+The Expo / React Native client is in `mobile`, using SDK 58 / React Native 0.88. It uses native components and Expo Router and shares the website's product types, display helpers and action ranking. Android 1.3.2 connects through **https://pharma-path.onrender.com** to the shared authenticated backend. Earlier APKs use the original API origin.
 
 ## Hosted Android demo
 
-The hosted APK is `outputs/mobile-demo/GRD-Supply-Android.apk`, version **1.1.0 / code 2**, ARM64. The public HTTPS origin is compiled into the app using `EXPO_PUBLIC_GRD_API_URL`; cleartext traffic is disabled. The cloud login is independent of the older local demo login and is saved privately in `outputs/deployment-setup/demo-login.txt`. No login password, database URL or signing secret is packaged in the app. This APK uses the generated demo signing key and is intended for direct demonstration installs, not Play Store publication.
+The Android review APK is version **1.3.2 / code 6**, ARM64. The build uses the branded HTTPS origin through `EXPO_PUBLIC_GRD_API_URL` and disables cleartext traffic. Sign in with the same workspace account as the website. This package uses the demonstration signing key for direct installs.
 
 A fresh install defaults to the hosted origin. Existing installations retain their saved server and scoped pending commands: change **Server connection** deliberately, resolving any pending commands first. Do not replay a local outbox into the hosted organisation. Render Free sleeps when idle and its worker sleeps too; open the website about a minute before the demo.
 
@@ -15,7 +15,7 @@ For a reproducible hosted build, use Node 24 and Android SDK/JDK, then from `mob
 ```sh
 GRD_ALLOW_LOCAL_HTTP=0 npx expo prebuild --platform android --no-install
 cd android
-EXPO_PUBLIC_GRD_API_URL=https://grd-supply-demo.onrender.com ./gradlew app:assembleRelease -PreactNativeArchitectures=arm64-v8a --max-workers 4
+EXPO_PUBLIC_GRD_API_URL=https://pharma-path.onrender.com ./gradlew app:assembleRelease -PreactNativeArchitectures=arm64-v8a --max-workers 4
 ```
 
 The EAS `preview` profile also specifies this public origin and disables cleartext traffic; no EAS cloud build or paid account was needed for the delivered local build. `mobile/.env.example` contains only public configuration.

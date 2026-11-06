@@ -2,11 +2,12 @@ import { Details } from "../WorkflowProgress";
 import { useEffect, useState } from "react";
 import { BookOpen, FlaskConical, RefreshCw, ShieldCheck } from "lucide-react";
 import { api, command } from "../api";
-import type { Data, Job, Metrics } from "../types";
+import type { Data, EvaluationWindow, Job, Metrics } from "../types";
 import type { Quality, StockCard } from "../../../shared/operations";
 import { Badge, Empty, Loading, SectionTitle } from "../ui";
 import {
   dateLabel,
+  forecastMethod,
   hasRole,
   number,
   shortLocation,
@@ -14,6 +15,18 @@ import {
   title,
 } from "../utils";
 import { Field, useOperation } from "./common";
+
+interface PublicBenchmark {
+  complete_weeks: number;
+  windows: Record<string, EvaluationWindow>;
+  categories: Record<
+    string,
+    {
+      selected: string;
+      test: Record<string, Record<string, Metrics>>;
+    }
+  >;
+}
 
 export function EvidenceWorkspace({
   data,
@@ -35,6 +48,7 @@ export function EvidenceWorkspace({
     [source, setSource] = useState(""),
     [category, setCategory] = useState("N02BE"),
     [benchmark, setBenchmark] = useState<Job | null>(null),
+    [report, setReport] = useState<PublicBenchmark | null>(null),
     [sourceInfo, setSourceInfo] = useState<{
       source_url: string;
       licence: string;
@@ -75,16 +89,46 @@ export function EvidenceWorkspace({
     };
   }, [product, location, asOf, start, data.me.inventory_revision]);
   useEffect(() => {
+    if (tab !== "benchmark") return;
+    let current = true;
     void api<typeof sourceInfo>("/benchmarks/source")
-      .then(setSourceInfo)
-      .catch((e) => setFetchError(e.message));
-  }, []);
+      .then((source) => {
+        if (current) setSourceInfo(source);
+      })
+      .catch((e) => {
+        if (current) setFetchError(e.message);
+      });
+    void api<PublicBenchmark>("/benchmarks/summary")
+      .then((summary) => {
+        if (current) setReport(summary);
+      })
+      .catch((e) => {
+        if (current) setFetchError(e.message);
+      });
+    return () => {
+      current = false;
+    };
+  }, [tab]);
   const latest = benchmark
     ? data.jobs.find((j) => j.id === benchmark.id) || benchmark
-    : data.jobs.find(
-        (j) => j.kind === "benchmark" && j.payload.category === category,
-      );
-  const result = latest?.result;
+    : [...data.jobs]
+        .reverse()
+        .find((j) => j.kind === "benchmark" && j.payload.category === category);
+  const saved = report?.categories[category];
+  const currentResult =
+    latest?.result.evaluation_windows?.test?.origins === 52
+      ? latest.result
+      : null;
+  const result =
+    currentResult ||
+    (saved && report
+      ? {
+          selected_model: saved.selected,
+          test_metrics_by_horizon: saved.test,
+          evaluation_windows: report.windows,
+          complete_weeks: report.complete_weeks,
+        }
+      : null);
   return (
     <div className="operations-space">
       <div className="page-heading">
@@ -409,8 +453,8 @@ export function EvidenceWorkspace({
             eyebrow="ORIGINAL PUBLIC DATA · SEPARATE EVIDENCE"
             title="Test the forecast on the original pharmacy series"
           >
-            Eight ATC categories, original dates and fractional publisher
-            quantities. These results do not represent observed Assam demand.
+            Observed pharmacy sales across eight categories. Separate selection,
+            interval calibration and final tests.
           </SectionTitle>
           <div className="source-attribution">
             <FlaskConical size={24} />
@@ -420,13 +464,6 @@ export function EvidenceWorkspace({
                   "Milan Zdravkovic · Pharma Sales Data"}
               </strong>
               <p>{sourceInfo?.units}</p>
-              {typeof result?.date_start === "string" &&
-                typeof result?.date_end === "string" && (
-                  <p>
-                    Original observation period: {String(result.date_start)} to{" "}
-                    {String(result.date_end)}.
-                  </p>
-                )}
               <a
                 href={
                   sourceInfo?.source_url ||
@@ -437,7 +474,18 @@ export function EvidenceWorkspace({
               >
                 View original dataset
               </a>
-              <small>{sourceInfo?.licence}</small>
+              <small>
+                <a
+                  href="https://creativecommons.org/licenses/by-nc/4.0/"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  CC BY-NC 4.0
+                </a>
+                {
+                  " · Non-commercial benchmark. Commercial use requires separate permission."
+                }
+              </small>
             </div>
           </div>
           <div className="ops-form-row">
@@ -492,108 +540,186 @@ export function EvidenceWorkspace({
               Refresh result
             </button>
           </div>
-          {!latest ? (
-            <Empty title="Run the first observed-data benchmark">
-              Model selection uses validation only. Final test targets are
-              separated and forecasts recurse without future actual sales as
-              lags.
-            </Empty>
-          ) : (
-            <>
+          {latest && (
+            <div className="ops-note">
               <Badge tone={latest.status === "completed" ? "green" : "amber"}>
                 {latest.status} · {latest.progress}%
               </Badge>
               {latest.error && <p role="alert">{latest.error}</p>}
-              {latest.status === "completed" && result && (
-                <>
-                  <div className="ops-metrics">
-                    <span>
-                      Selected model
-                      <b>{String(result.selected_model || "—")}</b>
-                    </span>
-                    <span>
-                      Complete weeks<b>{number(result.complete_weeks)}</b>
-                    </span>
-                    <span>
-                      Last validation target
-                      <b>{dateLabel(String(result.validation_last_target))}</b>
-                    </span>
-                    <span>
-                      First final-test target
-                      <b>{dateLabel(String(result.test_first_target))}</b>
-                    </span>
-                  </div>
-                  <Details title="How this is calculated & recorded">
-                    <p className="ops-note">
-                      {String(result.selection)}. {String(result.interval_note)}
-                      . Only four test origins per horizon: useful evidence, not
-                      a guarantee of generalisation.
-                    </p>
-                  </Details>
-                  <div className="table-scroll">
-                    <table className="data-table">
-                      <thead>
-                        <tr>
-                          <th>Horizon</th>
-                          <th>Model</th>
-                          <th>MAE</th>
-                          <th>WAPE</th>
-                          <th>Bias</th>
-                          <th>Test observations</th>
-                          <th>Interval coverage</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {Object.entries(
-                          result.test_metrics_by_horizon || {},
-                        ).flatMap(([h, models]) =>
-                          Object.entries(models).map(
-                            ([model, m]: [string, Metrics]) => (
-                              <tr
-                                key={h + model}
-                                className={
-                                  model === result.selected_model
-                                    ? "selected-metric"
-                                    : ""
-                                }
-                              >
-                                <td>{h} week(s)</td>
-                                <td>
-                                  {model}
-                                  {model === result.selected_model
-                                    ? " · selected"
-                                    : ""}
-                                </td>
-                                <td>{number(m.mae)}</td>
-                                <td>
-                                  {m.wape_pct === null
-                                    ? "Undefined (zero actual total)"
-                                    : number(m.wape_pct) + "%"}
-                                </td>
-                                <td>
-                                  {m.bias_pct === null
-                                    ? "—"
-                                    : number(m.bias_pct) + "%"}
-                                </td>
-                                <td>{m.observations}</td>
-                                <td>
-                                  {m.interval_coverage === undefined
-                                    ? "—"
-                                    : number(m.interval_coverage * 100) + "%"}
-                                </td>
-                              </tr>
-                            ),
-                          ),
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </>
-              )}
+            </div>
+          )}
+          {report && (
+            <BenchmarkOverview
+              report={report}
+              onSelect={(value) => {
+                setCategory(value);
+                setBenchmark(null);
+              }}
+            />
+          )}
+          {result ? (
+            <>
+              <div className="ops-metrics">
+                <span>
+                  Selected model
+                  <b>{forecastMethod(result.selected_model || "—")}</b>
+                </span>
+                <span>
+                  Complete weeks<b>{number(result.complete_weeks)}</b>
+                </span>
+                <span>
+                  Calibration windows
+                  <b>
+                    {result.evaluation_windows?.calibration?.origins ?? "—"}
+                  </b>
+                </span>
+                <span>
+                  Final test windows
+                  <b>{result.evaluation_windows?.test?.origins ?? "—"}</b>
+                </span>
+              </div>
+              <Details title="How this is calculated & recorded">
+                <p className="ops-note">
+                  Selection uses validation error. The 90% nominal intervals use
+                  separate calibration residuals. Each horizon has 52 held-out
+                  forecasts. Later forecast origins use only observations
+                  available by their own cut-off.
+                </p>
+              </Details>
+              <div className="table-scroll">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Horizon</th>
+                      <th>Model</th>
+                      <th>MAE</th>
+                      <th>WAPE</th>
+                      <th>Bias</th>
+                      <th>Test observations</th>
+                      <th>Interval coverage</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.entries(
+                      result.test_metrics_by_horizon || {},
+                    ).flatMap(([h, models]) =>
+                      Object.entries(models).map(
+                        ([model, m]: [string, Metrics]) => (
+                          <tr
+                            key={h + model}
+                            className={
+                              model === result.selected_model
+                                ? "selected-metric"
+                                : ""
+                            }
+                          >
+                            <td>{h} week(s)</td>
+                            <td>
+                              {forecastMethod(model)}
+                              {model === result.selected_model
+                                ? " · selected"
+                                : ""}
+                            </td>
+                            <td>{number(m.mae)}</td>
+                            <td>
+                              {m.wape_pct === null
+                                ? "Undefined (zero actual total)"
+                                : number(m.wape_pct) + "%"}
+                            </td>
+                            <td>
+                              {m.bias_pct === null
+                                ? "—"
+                                : number(m.bias_pct) + "%"}
+                            </td>
+                            <td>{m.observations}</td>
+                            <td>
+                              {m.interval_coverage === undefined
+                                ? "—"
+                                : number(m.interval_coverage * 100) + "%"}
+                            </td>
+                          </tr>
+                        ),
+                      ),
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </>
+          ) : (
+            <Empty title="Loading the public benchmark">
+              Use the category selector to review the reproduced results.
+            </Empty>
           )}
         </section>
       )}
+    </div>
+  );
+}
+
+function BenchmarkOverview({
+  report,
+  onSelect,
+}: {
+  report: PublicBenchmark;
+  onSelect: (category: string) => void;
+}) {
+  const comparisons = Object.values(report.categories)
+    .flatMap((category) =>
+      Object.values(category.test).map((models) => ({
+        selected: models[category.selected].wape_pct,
+        naive: models.naive.wape_pct,
+      })),
+    )
+    .filter((row) => row.selected !== null && row.naive !== null);
+  const mean = (key: "selected" | "naive") =>
+    comparisons.reduce((sum, row) => sum + (row[key] ?? 0), 0) /
+    comparisons.length;
+  const wins = comparisons.filter(
+    ({ selected, naive }) => selected! < naive!,
+  ).length;
+  return (
+    <div className="benchmark-overview">
+      <h3>All eight categories</h3>
+      <p className="ops-note">
+        Mean WAPE {number(mean("selected"), 1)}% selected vs{" "}
+        {number(mean("naive"), 1)}% last week. Selected methods lead in {wins}{" "}
+        of {comparisons.length} category and horizon comparisons.
+      </p>
+      <div className="table-scroll">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th>Selected on validation</th>
+              <th>1-week WAPE</th>
+              <th>2-week WAPE</th>
+              <th>4-week WAPE</th>
+            </tr>
+          </thead>
+          <tbody>
+            {Object.entries(report.categories).map(([id, category]) => (
+              <tr key={id}>
+                <td>
+                  <button className="text-button" onClick={() => onSelect(id)}>
+                    {id}
+                  </button>
+                </td>
+                <td>{forecastMethod(category.selected)}</td>
+                {["1", "2", "4"].map((h) => (
+                  <td key={h}>
+                    {number(category.test[h][category.selected].wape_pct, 1)}% /{" "}
+                    {number(category.test[h].naive.wape_pct, 1)}%
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="ops-note">
+        Each pair shows selected method / last-week baseline. Select a category
+        for coverage and the other candidates.
+      </p>
     </div>
   );
 }

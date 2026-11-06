@@ -16,6 +16,12 @@ def test_forecast_uses_separate_validation_and_final_test_targets():
     assert r["status"] == "ready"
     assert r["validation_last_target"] < r["test_first_target"]
     assert set(r["test_metrics_by_horizon"]) == {"1", "2", "4"}
+    windows = r["evaluation_windows"]
+    assert windows["validation"]["last_target_week_ending"] < windows["calibration"]["first_target_week_ending"]
+    assert windows["calibration"]["last_target_week_ending"] < windows["test"]["first_target_week_ending"]
+    assert windows["test"]["origins"] == 26
+    assert r["history"][-1]["date"] == r["last_complete_week"]
+    assert all(p["lower"] is not None for p in r["operational_forecast"])
     for x in r["forecast"]:
         assert 0 <= x["lower"] <= x["quantity"] <= x["upper"]
     assert (
@@ -35,6 +41,8 @@ def test_paired_simulation_is_reproducible_and_conserves_stock():
     assert a["baseline"]["conservation_ok"] and a["proposed"]["conservation_ok"]
     assert a["measured_grd_impact"] is False
     assert a["evidence_type"] == "synthetic_policy_simulation"
+    assert [point["safety_days"] for point in a["safety_stock_options"]] == [0, 1, 2, 3, 5, 7, 10]
+    assert all(point["conservation_ok"] for point in a["safety_stock_options"])
 
 
 def test_jobs_persist_and_finish_with_explicit_missing_history(env):

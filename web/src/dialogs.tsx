@@ -22,6 +22,7 @@ import type {
   Case,
   Data,
   Explanation,
+  NetworkRow,
   Option,
   Plan,
   Product,
@@ -58,6 +59,7 @@ export function ResolveDialog({
   onDone,
   requestId,
   shortageDate,
+  recommendation,
 }: {
   data: Data;
   product: Product;
@@ -67,16 +69,18 @@ export function ResolveDialog({
   onDone: (p: Plan) => Promise<void>;
   requestId?: string;
   shortageDate?: string | null;
+  recommendation?: NetworkRow["recommendation"];
 }) {
   const existing = data.requests.find((x) => x.id === requestId);
   const [dest, setDest] = useState(locationId),
     [quantity, setQuantity] = useState(
       existing
         ? existing.quantity - existing.fulfilled - existing.cancelled
-        : product.pack_size,
+        : recommendation?.quantity || product.pack_size,
     ),
     [needed, setNeeded] = useState(
       existing?.needed_by ||
+        recommendation?.needed_by ||
         shortageDate ||
         new Date(new Date(asOf + "T12:00:00").getTime() + 7 * 86400000)
           .toISOString()
@@ -92,6 +96,8 @@ export function ResolveDialog({
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [createdRequest, setCreatedRequest] = useState<string | null>(null);
+  const forecastPlan = !existing && dest === locationId && !!recommendation;
+  const projectedShortage = dest === locationId ? shortageDate : null;
   const eligible =
     Number.isSafeInteger(quantity) &&
     quantity > 0 &&
@@ -121,6 +127,20 @@ export function ResolveDialog({
               : r.options.find(
                   (x) =>
                     x.feasible &&
+                    x.evidence &&
+                    x.evidence.arrival_date <= needed &&
+                    data.locations.find((l) => l.id === x.source_id)?.kind !==
+                      "warehouse",
+                )?.source_id ||
+                r.options.find(
+                  (x) =>
+                    x.feasible &&
+                    x.evidence &&
+                    x.evidence.arrival_date <= needed,
+                )?.source_id ||
+                r.options.find(
+                  (x) =>
+                    x.feasible &&
                     data.locations.find((l) => l.id === x.source_id)?.kind !==
                       "warehouse",
                 )?.source_id ||
@@ -140,7 +160,7 @@ export function ResolveDialog({
       cancelled = true;
       clearTimeout(timeout);
     };
-  }, [dest, quantity, eligible, product.id, asOf, data.locations]);
+  }, [dest, quantity, eligible, product.id, asOf, data.locations, needed]);
   const choice =
     !loading && optionsFor === optionsKey
       ? options.find((x) => x.source_id === source && x.feasible)
@@ -153,7 +173,9 @@ export function ResolveDialog({
     setError("");
     try {
       let requestId = existing?.id || createdRequest;
-      if (!requestId) {
+      // A forecast-driven restock is incoming supply. A booked request would
+      // count the same recommended quantity as downstream demand.
+      if (!requestId && !forecastPlan) {
         const request = await command<{ id: string }>("/requests", {
           product_id: product.id,
           destination_id: dest,
@@ -210,7 +232,17 @@ export function ResolveDialog({
             <select
               value={dest}
               disabled={busy || !!existing || !!createdRequest}
-              onChange={(e) => setDest(e.target.value)}
+              onChange={(e) => {
+                const next = e.target.value;
+                setDest(next);
+                setQuantity(
+                  next === locationId
+                    ? recommendation?.quantity || product.pack_size
+                    : product.pack_size,
+                );
+                if (next === locationId && recommendation)
+                  setNeeded(recommendation.needed_by);
+              }}
             >
               {data.locations
                 .filter((x) => canLocation(data, x.id))
@@ -237,28 +269,46 @@ export function ResolveDialog({
             Needed by
             <input
               type="date"
-              disabled={busy || !!createdRequest || !!existing}
+              disabled={busy || !!createdRequest || !!existing || forecastPlan}
               min={asOf}
               value={needed}
               onChange={(e) => setNeeded(e.target.value)}
             />
           </label>
         </div>
+        {forecastPlan && recommendation && (
+          <div className="notice">
+            <PackageCheck size={17} />
+            <p>
+              <strong>
+                {number(recommendation.quantity)} {product.base_unit}s suggested
+              </strong>
+              {" · "}{" "}
+              {number(recommendation.quantity / recommendation.pack_size)}{" "}
+              packs. Smallest whole-pack receipt by{" "}
+              {dateLabel(recommendation.needed_by)} to cover demand through{" "}
+              {dateLabel(recommendation.cover_through)}. Check the source’s
+              arrival and shelf life below.
+            </p>
+          </div>
+        )}
         {!eligible && (
           <div className="inline-error">
             Enter a positive quantity in multiples of {product.pack_size}.
           </div>
         )}
         {choice?.evidence &&
-          ((shortageDate && choice.evidence.arrival_date > shortageDate) ||
+          ((projectedShortage &&
+            choice.evidence.arrival_date > projectedShortage) ||
             choice.evidence.arrival_date > needed) && (
             <div className="notice delivery-risk">
               <TriangleAlert size={18} />
               <p>
                 <strong>Delivery timing needs attention.</strong> Arrival is
                 estimated for {dateLabel(choice.evidence.arrival_date)}
-                {shortageDate
-                  ? `, after the projected shortage on ${dateLabel(shortageDate)}`
+                {projectedShortage &&
+                choice.evidence.arrival_date > projectedShortage
+                  ? `, after the projected shortage on ${dateLabel(projectedShortage)}`
                   : `; your requested date is ${dateLabel(needed)}`}
                 . Arrange earlier supply for the uncovered period.
               </p>
@@ -332,15 +382,17 @@ export function ResolveDialog({
             </div>
           </div>
         )}
-        <label className="full-label">
-          Reason for this request
-          <textarea
-            disabled={busy || !!createdRequest || !!existing}
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            rows={2}
-          />
-        </label>
+        {!forecastPlan && (
+          <label className="full-label">
+            Reason for this request
+            <textarea
+              disabled={busy || !!createdRequest || !!existing}
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              rows={2}
+            />
+          </label>
+        )}
         <div className="notice">
           <ShieldCheck size={18} />
           <p>Next: a manager reviews and approves this plan.</p>

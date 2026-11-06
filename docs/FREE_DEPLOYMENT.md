@@ -13,7 +13,9 @@ best-effort.
 
 Verified on the public service: HTTPS readiness, authenticated sign-in, website/map/action centre, stock reconciliation, forecast and simulation completion through the hosted worker, idempotent job submission, and unchanged inventory/completed jobs after a Render service restart. Evidence is in the ignored `outputs/deployment-setup` folder. Local private `demo-login.txt` contains the app login only; it is not part of the repository or Android bundle.
 
-The Render **Free** API service hosts one supervised forecasting worker and uses persistent Neon **Free** PostgreSQL. Android connects directly to https://grd-supply-demo.onrender.com, which also serves the original website. Both browser links use the same accounts, stock and forecast jobs.
+The Render **Free** API service hosts one supervised forecasting worker and uses persistent Neon **Free** PostgreSQL. Android 1.3.2 uses the branded origin. The original API address remains available for earlier packages.
+
+Set `GRD_INSTALL_PACK_SCENARIO=true` on the synthetic API service to add the on-time strip scenario at startup. It adds one product and generated history to the seeded Assam workspace associated with `GRD_DEMO_EMAIL`. Repeated starts reuse the product. Existing stock, demand and transfer records keep their original IDs and quantities.
 
 The Free API service sleeps after 15 idle minutes, can take about a minute to wake, and discards local files on sleep/restart. Open the service before a presentation; do not use artificial keep-alive traffic. The worker pauses while the service sleeps. Interrupted running jobs may require the documented `grd recover-jobs` procedure after the 30-minute lease expires. This free setup is a demo boundary, not production availability.
 

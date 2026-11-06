@@ -27,6 +27,8 @@ def main():
     seed = commands.add_parser("seed-demo")
     seed.add_argument("--email", required=True)
     seed.add_argument("--as-of", type=date.fromisoformat, default=date(2026, 11, 1))
+    pack_scenario = commands.add_parser("add-pack-scenario")
+    pack_scenario.add_argument("--email", required=True)
     commands.add_parser("worker")
     commands.add_parser("worker-once")
     commands.add_parser("openapi")
@@ -99,6 +101,14 @@ def main():
         with transaction(factory) as s:
             result = seed_demo(s, args.email, password, args.as_of)
         print(json.dumps(result, indent=2))
+    elif args.command == "add-pack-scenario":
+        from .demo import add_pack_scenario
+
+        with transaction(factory) as s:
+            product_id = add_pack_scenario(s, args.email)
+        if product_id is None:
+            parser.error("An administrator of the seeded Assam scenario is required")
+        print(json.dumps({"product_id": product_id}))
     elif args.command in ["worker", "worker-once"]:
         from .worker import run_once
 

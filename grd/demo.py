@@ -6,10 +6,10 @@ import math
 import json
 
 import numpy as np
-from sqlalchemy import select
+from sqlalchemy import insert, select
 
 from . import domain as d
-from .models import Batch, Dataset, Demand, Location, Organisation, Product, Route, User
+from .models import Batch, Dataset, Demand, Job, Location, Organisation, Product, Route, User
 from .security import passwords
 
 
@@ -160,3 +160,105 @@ def seed_demo(s, email, password, as_of=date(2026, 11, 1), seed=42):
         "evidence_type": "synthetic",
         "demand_rows": count,
     }
+
+
+def add_pack_scenario(s, email):
+    """Install one additional scenario product without rewriting the stress case."""
+    user = s.scalar(select(User).where(User.email == email.lower(), User.role == "admin", User.active))
+    if not user:
+        return None
+    org = s.scalar(select(Organisation).where(Organisation.id == user.org_id).with_for_update())
+    if org.mode != "synthetic" or org.scenario_on is None:
+        return None
+    existing = s.scalars(select(Dataset).where(Dataset.org_id == org.id))
+    if not any(dataset.provenance.get("generator_version") == "assam-v1" for dataset in existing):
+        return None
+    prefix = org.id[:8]
+    product_id = prefix + "-P-strips"
+    if s.get(Product, product_id):
+        return product_id
+    locations = [s.get(Location, prefix + "-L" + str(i)) for i in range(5)]
+    if not all(loc and loc.org_id == org.id for loc in locations):
+        raise ValueError("Assam scenario needs the five original seeded locations")
+
+    as_of = org.scenario_on
+    manifest = {
+        "name": "Assam strip replenishment scenario",
+        "evidence_type": "synthetic",
+        "geography": "Five fictional Assam operating sites",
+        "source_url": "grd.demo.add_pack_scenario",
+        "licence": "Project-generated synthetic demand and opening stock",
+        "units": "10-tablet strips",
+        "limitations": [
+            "Illustrative distribution volumes and 20-strip cartons",
+            "Seasonality is generated and is not evidence about Assam demand",
+        ],
+        "seed": 42,
+        "as_of": str(as_of),
+        "generator_version": "assam-strips-v1",
+    }
+    product = Product(
+        id=product_id,
+        org_id=org.id,
+        name="Paracetamol 500 mg · 10-tablet strips",
+        base_unit="strip",
+        pack_size=20,
+        unit_cost_paise=900,
+        unit_conversions={"carton": 20},
+        provenance={
+            "evidence_type": "synthetic",
+            "review_start_location": locations[3].id,
+            "note": "Illustrative packaging and costs; review starts at Silchar",
+        },
+    )
+    weeks = 157
+    days = 7 * weeks
+    dataset = Dataset(
+        org_id=org.id,
+        name=manifest["name"],
+        digest=hashlib.sha256(json.dumps(manifest, sort_keys=True).encode()).hexdigest(),
+        provenance=manifest,
+        row_count=days * len(locations),
+    )
+    s.add_all([product, dataset])
+    s.flush()
+    rng = np.random.default_rng(manifest["seed"])
+    for loc, mean, opening in zip(locations, (0, 210, 175, 180, 140), (48000, 9000, 6500, 2200, 5500)):
+        rows = []
+        for i in range(days):
+            day = as_of - timedelta(days=days - 1 - i)
+            rate = mean * (1 + 0.10 * math.sin(2 * math.pi * day.timetuple().tm_yday / 365))
+            rows.append({
+                "org_id": org.id,
+                "date": day,
+                "product_id": product_id,
+                "location_id": loc.id,
+                "quantity": int(rng.poisson(rate)),
+                "measure": "requested",
+                "dataset_id": dataset.id,
+            })
+        s.execute(insert(Demand), rows)
+        batch = Batch(
+            org_id=org.id,
+            product_id=product_id,
+            location_id=loc.id,
+            code=f"STRIP-{loc.id.rsplit('-', 1)[-1]}",
+            expiry=as_of + timedelta(days=120),
+            quantity=0,
+            reserved=0,
+        )
+        s.add(batch)
+        s.flush()
+        d.change(s, user, batch, opening, "demo_opening", dataset.id)
+    inputs = {"product_id": product_id, "location_id": locations[3].id, "as_of": str(as_of)}
+    s.add_all([
+        Job(org_id=org.id, actor_id=user.id, kind="forecast", payload={
+            **inputs, "measure": "requested", "horizons": [1, 2, 4],
+        }),
+        Job(org_id=org.id, actor_id=user.id, kind="simulation", payload={
+            **inputs, "seed": 42, "days": 90, "lead_days": 5, "proposed_safety_days": 2,
+        }),
+    ])
+    org.revision += 1
+    d.audit(s, user, "demo.pack_scenario_added", dataset.id, manifest, [loc.id for loc in locations])
+    return product_id

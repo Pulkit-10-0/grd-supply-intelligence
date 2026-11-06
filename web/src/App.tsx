@@ -804,6 +804,7 @@ export default function App() {
             <Details title="Daily stock timeline">
               <RiskGrid
                 rows={rows}
+                unit={product?.base_unit}
                 onCell={(id) => {
                   const row = rows.find((r) => r.location_id === id);
                   if (row) {
@@ -822,6 +823,7 @@ export default function App() {
               locationId={selected}
               onLocation={setSelected}
               asOf={asOf}
+              network={currentNetwork}
               onRefresh={reload}
               notify={notify}
             />
@@ -909,12 +911,15 @@ export default function App() {
         <TimelineEvidence
           row={dialog.row}
           onClose={() => setDialog(null)}
-          onPlan={() =>
-            setDialog({
-              type: "resolve",
-              locationId: dialog.row.location_id,
-              productId: dialog.row.product_id,
-            })
+          onPlan={
+            hasRole(data, "planner", "manager")
+              ? () =>
+                  setDialog({
+                    type: "resolve",
+                    locationId: dialog.row.location_id,
+                    productId: dialog.row.product_id,
+                  })
+              : undefined
           }
         />
       )}
@@ -930,6 +935,13 @@ export default function App() {
                 r.location_id === dialog.locationId &&
                 r.product_id === (dialog.productId || product.id),
             )?.shortage_date
+          }
+          recommendation={
+            currentNetwork?.table.find(
+              (r) =>
+                r.location_id === dialog.locationId &&
+                r.product_id === (dialog.productId || product.id),
+            )?.recommendation
           }
           requestId={dialog.requestId}
           locationId={dialog.locationId}
@@ -1039,9 +1051,7 @@ function Brand() {
         <span />
       </div>
       <div>
-        <strong>
-          Pharma Path
-        </strong>
+        <strong>Pharma Path</strong>
         <small>SUPPLY INTELLIGENCE</small>
       </div>
     </div>
@@ -1669,8 +1679,15 @@ function LocationDialog({
             <strong>{number(row.balance.reserved)}</strong>
           </div>
           <div>
-            <small>Confirmed in transit</small>
-            <strong>{number(row.inbound_units)} units</strong>
+            <small>
+              {row.in_transit_units == null
+                ? "Scheduled inbound"
+                : "In transit"}
+            </small>
+            <strong>
+              {number(row.in_transit_units ?? row.inbound_units)}{" "}
+              {product.base_unit}s
+            </strong>
           </div>
           <div>
             <small>Historical daily demand</small>

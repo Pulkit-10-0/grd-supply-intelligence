@@ -159,6 +159,10 @@ export function initialProduct(
   current = "",
 ) {
   if (data.products.some((p) => p.id === current)) return current;
+  const practice = data.products.find(
+    (p) => p.provenance?.review_start_location,
+  );
+  if (practice) return practice.id;
   const open = data.requests.find(
     (r) => r.quantity > r.fulfilled + r.cancelled,
   );
@@ -169,11 +173,15 @@ export function initialProduct(
   );
 }
 export function initialLocation(
-  data: Pick<Data, "locations" | "requests">,
+  data: Pick<Data, "locations" | "requests"> & Partial<Pick<Data, "products">>,
   product: string,
   current = "",
 ) {
   if (data.locations.some((l) => l.id === current)) return current;
+  const start = data.products?.find((p) => p.id === product)?.provenance
+    ?.review_start_location;
+  if (typeof start === "string" && data.locations.some((l) => l.id === start))
+    return start;
   const open = data.requests.find(
     (r) => r.product_id === product && r.quantity > r.fulfilled + r.cancelled,
   );

@@ -455,9 +455,8 @@ export function MoreScreen() {
               : "Review dataset provenance and approved operating policies before acting."}
           </Txt>
           <Txt small>
-            Map: geoBoundaries / DataMeet / Election Commission of India, 2011 ·
-            CC BY 2.5 India. Paths are simplified for mobile. Route lines are
-            illustrative.
+            Map outline from Survey of India, generalised at 1:16 million.
+            Site locations are approximate and lines show configured supply lanes.
           </Txt>
         </Card>
       </Disclosure>

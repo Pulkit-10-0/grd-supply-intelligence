@@ -37,23 +37,28 @@ def configure():
 
 def initialise():
     subprocess.run([sys.executable, "-m", "grd.cli", "migrate"], check=True)
-    if os.getenv("GRD_SEED_CLOUD_DEMO", "false").lower() != "true":
+    seed = os.getenv("GRD_SEED_CLOUD_DEMO", "false").lower() == "true"
+    add_pack_scenario = os.getenv("GRD_INSTALL_PACK_SCENARIO", "false").lower() == "true"
+    if not seed and not add_pack_scenario:
         return
     email = os.environ.get("GRD_DEMO_EMAIL", "demo@grd.local").lower()
-    password = os.environ.get("GRD_ADMIN_PASSWORD", "")
-    if len(password) < 12:
-        raise ValueError("Set a new cloud demo password of at least 12 characters")
     engine, factory = database()
     try:
         with transaction(factory) as session:
             existing = session.scalar(select(User).where(User.email == email))
-            if existing:
-                return  # Never reset a demonstration on restart or replace a password.
-            if session.scalar(select(Organisation.id).limit(1)):
-                raise ValueError("Automatic demo seed only allowed in an empty database")
-            from grd.demo import seed_demo
+            if seed and not existing:
+                if session.scalar(select(Organisation.id).limit(1)):
+                    raise ValueError("Automatic demo seed only allowed in an empty database")
+                from grd.demo import seed_demo
 
-            seed_demo(session, email, password)
+                password = os.environ.get("GRD_ADMIN_PASSWORD", "")
+                if len(password) < 12:
+                    raise ValueError("Set a new cloud demo password of at least 12 characters")
+                seed_demo(session, email, password)
+            if add_pack_scenario:
+                from grd.demo import add_pack_scenario as install
+
+                install(session, email)
     finally:
         engine.dispose()
 

@@ -11,6 +11,10 @@ ASSETS = Path(__file__).with_name("assets")
 CATEGORIES = ["M01AB", "M01AE", "N02BA", "N02BE", "N05B", "N05C", "R03", "R06"]
 
 
+def summary():
+    return json.loads((ASSETS / "pharma-benchmark.json").read_text())
+
+
 def source():
     manifest = json.loads((ASSETS / "pharma-manifest.json").read_text())
     return {

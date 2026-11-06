@@ -322,9 +322,9 @@ The current forecasting module evaluates:
 
 The evaluator uses complete observed Monday–Sunday weeks. Missing periods are not silently filled with zero. Insufficient or stale history produces an explicit status.
 
-Forecasts cover **1, 2 and 4 weeks**. Multi-step predictions recurse without inserting future actual sales as lag inputs. Validation selects the model; final held-out targets are separated from validation. The selected model may be a simple baseline.
+Forecasts cover **1, 2 and 4 weeks**. Multi-step predictions recurse without inserting future actual sales as lag inputs. The evaluator uses distinct rolling windows for method selection, interval calibration and final testing. It tests on 26 or 52 origins per horizon, depending on available history. Gradient boosting is selected only when its validation MAE is lower than the strongest baseline's.
 
-Residual-based intervals and measured held-out coverage are reported. Calibration and final-test samples are small, and overlapping origins limit the strength of conclusions. An ML win, fixed accuracy percentage or transferability to Assam is not promised.
+The website shows each candidate's held-out error and coverage at a nominal 90% interval. Rolling origins share observations, so the counts describe forecasts rather than independent samples. Short histories use the four-week mean without a final-test claim. The public benchmark applies the same evaluator to all eight categories and ships the reproducible results.
 
 ### Operational projection
 
@@ -668,7 +668,7 @@ npm test
 For the hosted demo:
 
 ```sh
-export EXPO_PUBLIC_GRD_API_URL=https://grd-supply-demo.onrender.com
+export EXPO_PUBLIC_GRD_API_URL=https://pharma-path.onrender.com
 export GRD_ALLOW_LOCAL_HTTP=0
 
 npx expo prebuild --platform android
@@ -677,7 +677,7 @@ npx expo run:android --variant release
 
 For a local Android emulator API, use `http://10.0.2.2:8011` and explicitly set `GRD_ALLOW_LOCAL_HTTP=1` before prebuild/build. A local HTTP-enabled binary is a different configuration; use HTTPS and disable cleartext traffic for hosted distribution.
 
-Generated native folders are not committed. Configure native behaviour through `app.config.js` and Expo config plugins. Android version metadata for this release is **1.3.1 / version code 5**.
+Generated native folders are not committed. Configure native behaviour through `app.config.js` and Expo config plugins. Android version metadata for the branded build is **1.3.2 / version code 6**.
 
 An APK can be built from source using the steps above. Locally produced demonstration APKs, signing keys and build caches are deliberately excluded from Git. The existing demonstrated build uses a debug/demo signing identity; production/store distribution needs its own signing and acceptance process.
 
@@ -708,7 +708,7 @@ The Free API can sleep. The calculation worker pauses with it, and local contain
 
 `render.yaml` and `Dockerfile` describe the deployment approach. Configure secrets in provider-private settings. Initial cloud seeding is deliberate and must be disabled afterward; never reseed or upload a local database over an existing operating environment.
 
-Both Render services build from this repository's `main` branch with manual deploys. The API service uses the existing Neon database, and installed Android builds still connect directly to https://grd-supply-demo.onrender.com.
+Both Render services build from this repository's `main` branch with manual deploys. The API service uses the existing Neon database. Android 1.3.2 uses the branded HTTPS origin. Earlier packages still use the original API address.
 
 The [availability workflow](.github/workflows/demo-availability.yml) checks the public readiness route every ten minutes and can be run on demand. GitHub scheduling is best-effort, so idle starts are still possible on Render Free.
 
@@ -908,7 +908,7 @@ Key references and retained notices:
 - [Official NESFIC-I-09 challenge](https://startup.assam.gov.in/nesfic26/problem-statements/nesfic-i-09).
 - [Pharma Sales Data](https://www.kaggle.com/datasets/milanzdravkovic/pharma-sales-data), with [snapshot attribution](grd/assets/README.md).
 - [NASA POWER documentation](https://power.larc.nasa.gov/docs/services/api/temporal/daily/) for the optional weather download.
-- [Map source metadata](web/public/maps/source.json): geoBoundaries/DataMeet/Election Commission of India boundary lineage, CC BY 2.5 India; mobile outlines are simplified.
+- The web and Android maps use a generalised national outline from the Survey of India. Site positions are approximate and links show configured supply lanes. [Map source and processing](web/public/maps/source.json) · [DST geospatial guidelines](https://geospatial.dst.gov.in/Guidelines.aspx)
 - Optional OpenStreetMap background attribution is displayed in the map.
 - [Bundled font and runtime notices](web/public/licenses/) and [Expo template notice](mobile/EXPO_TEMPLATE_LICENSE) remain included.
 
