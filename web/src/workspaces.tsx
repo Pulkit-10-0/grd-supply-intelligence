@@ -340,12 +340,13 @@ export function ForecastWorkspace({
   const datasetsVersion = data.datasets
     .map((d) => d.id + ":" + d.digest)
     .join(",");
+  const recordedHistory = forecastJob?.result.history;
   useEffect(() => {
     let cancelled = false;
     setHistory([]);
     setError("");
     setLoading(true);
-    if (!productId || !locId) {
+    if (!productId || !locId || recordedHistory) {
       setLoading(false);
       return;
     }
@@ -364,9 +365,9 @@ export function ForecastWorkspace({
     return () => {
       cancelled = true;
     };
-  }, [productId, locId, datasetsVersion]);
+  }, [productId, locId, datasetsVersion, recordedHistory]);
   const chart = useMemo(() => {
-    const past = forecastJob?.result.history || weeklyHistory(history, asOf);
+    const past = recordedHistory || weeklyHistory(history, asOf);
     const future =
       forecastJob?.result.operational_forecast ||
       forecastJob?.result.forecast ||
@@ -393,7 +394,7 @@ export function ForecastWorkspace({
         };
       }),
     ];
-  }, [history, forecastJob, asOf]);
+  }, [history, forecastJob, asOf, recordedHistory]);
   const scores = forecastJob?.result.test_metrics_by_horizon?.[metricHorizon];
   const method = forecastJob?.result.selected_model || "recent4";
   const selected = scores?.[method];
@@ -927,7 +928,7 @@ function SimulationResult({ job, unit }: { job: Job; unit: string }) {
                 name="Fill rate"
                 unit="%"
                 domain={["dataMin", 100]}
-                tickFormatter={(x) => `${number(x, 1)}%`}
+                tickFormatter={(x) => number(x, 1)}
               />
               <Tooltip
                 formatter={(x, label) => [number(Number(x), 1), label]}
