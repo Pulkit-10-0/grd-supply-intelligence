@@ -20,6 +20,7 @@ operational workflows, tests and deployment tooling.
 Source-specific dataset, map, font, template and dependency licence notices remain
 included. No new repository-wide licence is assigned by this publication.
 
-The existing hosted demonstration remains connected to its original repository.
-Creating this repository does not transfer provider accounts, deployment ownership,
-secrets or databases, or change the running demo.
+On 7 November 2026, the existing Render service was relinked to
+`Pulkit-10-0/pharma-path` on `main`. Its tagged evaluator commit `b987037`
+passed readiness on the existing service and Neon database. The original team
+repository remains the credited source of the initial experiments.

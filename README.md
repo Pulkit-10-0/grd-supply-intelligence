@@ -24,6 +24,8 @@ The application was developed around **NESFIC-I-09**, the medicine demand and in
 
 ![Planning Studio: saved supply comparisons, donor options and frozen scenarios](docs/images/planning-studio.png)
 
+**NESFIC evaluator release.** The [tagged release](https://github.com/Pulkit-10-0/pharma-path/releases/tag/nesfic-i09-review-1) contains Android 1.3.1 and the extended benchmark results. The selected methods averaged 27.3% WAPE versus 32.9% for last-week naive across eight public category series and three horizons, with 52 test origins per comparison. This is public-category forecasting evidence. GRD performance requires an authorised pilot.
+
 **Interface update — 3 November 2026:** guided order progress, one receiving form, clearer next actions, expandable details and editable supplier planning assumptions. Backend, website and Android CI checks passed. See the [usability update](docs/USABILITY_UPDATE_2026-11-03.md).
 
 ## Contents
@@ -706,7 +708,9 @@ Free hosting can sleep. The calculation worker pauses with the service, and loca
 
 `render.yaml` and `Dockerfile` describe the deployment approach. Configure secrets in provider-private settings. Initial cloud seeding is deliberate and must be disabled afterward; never reseed or upload a local database over an existing operating environment.
 
-**This repository has a new `main` branch.** The reference live demo remains connected to the original team repository. Creating this public source repository did not move cloud accounts, secrets, deployment ownership or the database. Select this repository/branch explicitly if creating a new deployment.
+The reference service builds from this repository's `main` branch. The tagged evaluator commit `b987037` is deployed to the existing service and Neon database. Deploys are manual. The Android origin and existing data remain in place.
+
+The [availability workflow](.github/workflows/demo-availability.yml) checks the public readiness route every ten minutes and can be run on demand. GitHub scheduling is best-effort, so idle starts are still possible on Render Free.
 
 A separate Vercel website is optional; it still needs the persistent backend/database/worker. Do not assume deploying the repository as a static frontend deploys the calculation service.
 
