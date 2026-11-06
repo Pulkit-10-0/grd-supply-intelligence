@@ -24,7 +24,7 @@ The application was developed around **NESFIC-I-09**, the medicine demand and in
 
 ![Planning Studio: saved supply comparisons, donor options and frozen scenarios](docs/images/planning-studio.png)
 
-**NESFIC evaluator release.** The [tagged release](https://github.com/Pulkit-10-0/pharma-path/releases/tag/nesfic-i09-review-1) contains Android 1.3.1 and the extended benchmark results. The selected methods averaged 27.3% WAPE versus 32.9% for last-week naive across eight public category series and three horizons, with 52 test origins per comparison. This is public-category forecasting evidence. GRD performance requires an authorised pilot.
+**NESFIC evaluator release.** Android 1.3.2 uses the branded Pharma Path address. The selected forecasting methods averaged 27.3% WAPE versus 32.9% for the last-week baseline across eight public category series and three horizons, with 52 test origins per comparison. GRD performance requires an authorised pilot. [Android and benchmark downloads](https://github.com/Pulkit-10-0/pharma-path/releases/tag/nesfic-i09-review-2)
 
 **Interface update — 3 November 2026:** guided order progress, one receiving form, clearer next actions, expandable details and editable supplier planning assumptions. Backend, website and Android CI checks passed. See the [usability update](docs/USABILITY_UPDATE_2026-11-03.md).
 
