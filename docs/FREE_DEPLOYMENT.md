@@ -11,7 +11,7 @@ The [GitHub availability workflow](../.github/workflows/demo-availability.yml)
 checks readiness about every ten minutes. Scheduling and free hosting remain
 best-effort.
 
-Verified on the public service: HTTPS readiness, authenticated sign-in, website/map/action centre, stock reconciliation, forecast and simulation completion through the hosted worker, idempotent job submission, and unchanged inventory/completed jobs after a Render service restart. Evidence is in the ignored `outputs/deployment-setup` folder. Local private `demo-login.txt` contains the app login only; it is not part of the repository or Android bundle.
+Verified on the public service: HTTPS readiness, authenticated sign-in, website/map/action centre, stock reconciliation, forecast and simulation completion through the hosted worker, idempotent job submission, and unchanged inventory/completed jobs after a Render service restart. Evidence is in the ignored `outputs/deployment-setup` folder. The local `demo-login.txt` records the current shared synthetic login, which is also pre-filled on the public website.
 
 The Render **Free** API service hosts one supervised forecasting worker and uses persistent Neon **Free** PostgreSQL. Android 1.3.2 uses the branded origin. The original API address remains available for earlier packages.
 
@@ -42,7 +42,7 @@ Vercel hosts a browser website; Android/iOS applications are installed separatel
 
 ## Credentials and recovery
 
-Cloud passwords are independent of the existing local demo password. Do not upload `.env`, `grd.db`, data exports, backups or credentials. Docker excludes these paths. Do not enable public demo auto-login: the local Vite helper is development-only and is not included in the production build.
+The public website pre-fills `demo@pharmapath.local` and its shared synthetic workspace password at the owner's request. Visitors click Sign in to authenticate and can operate the shared synthetic records. This public login is distinct from the local Vite development helper. Keep database credentials, provider secrets, `.env`, backups and real business data private. Docker excludes these paths.
 
 The local administrator can run migrations or job recovery using the cloud database secret in an isolated environment; never put the URL in shell history or logs. Stop the old worker before intentional recovery. Restore backups into a separate database and reconcile before switching services. Neon Free retention and recovery features are limited; export a separate encrypted backup for any non-disposable pilot.
 

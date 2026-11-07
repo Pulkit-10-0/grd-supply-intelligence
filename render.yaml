@@ -16,7 +16,7 @@ services:
       - key: GRD_ADMIN_PASSWORD
         sync: false
       - key: GRD_DEMO_EMAIL
-        value: demo@grd.local
+        value: demo@pharmapath.local
       - key: GRD_SEED_CLOUD_DEMO
         value: "false"
       - key: GRD_INSTALL_PACK_SCENARIO

@@ -36,7 +36,7 @@ export async function api<T>(
   const version = sessionVersion;
   const response = await fetch(`${apiOrigin}/api/v1${path}`, {
     method,
-    signal: AbortSignal.timeout(30000),
+    signal: AbortSignal.timeout(path === "/auth/login" ? 90000 : 30000),
     headers: {
       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       ...(body !== undefined ? { "Content-Type": "application/json" } : {}),

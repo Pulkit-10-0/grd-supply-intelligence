@@ -1064,8 +1064,9 @@ function Login({
   onReady: () => Promise<void>;
   connectionError: string;
 }) {
-  const [email, setEmail] = useState(""),
-    [password, setPassword] = useState(""),
+  // Public access to the shared synthetic workspace, requested for examiner review.
+  const [email, setEmail] = useState("demo@pharmapath.local"),
+    [password, setPassword] = useState("VyQjzbWlCJCQrTcAxQyBGaCP-OSdlPBH"),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
   async function signIn(demo = false) {
